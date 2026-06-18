@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BlockVoices — Live Project Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--black:#000; --ink:#16140e; --paper:#FFFFFF; --line:#E6E2D6; --muted:#6E6A5E; --gold:#E9BF37; --gold-d:#C99E12;
+    --joint:#DAD8D0; --skylark:#A6C4F5; --skylark-tx:#1b294f; --teal:#15B8C4; --magenta:#C42FB2; --violet:#7B53E6; --cyan:#19C8E0;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace; --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--mono);line-height:1.5;font-size:14px;-webkit-font-smoothing:antialiased}
+  .gradbar{height:4px;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta))}
+  .masthead{background:var(--black);text-align:center;padding:30px 20px 26px;
+    background-image:radial-gradient(60% 80% at 12% 0%,rgba(233,191,55,.10),transparent 60%),radial-gradient(50% 70% at 90% 100%,rgba(123,83,230,.16),transparent 60%),radial-gradient(40% 60% at 0% 70%,rgba(21,200,196,.10),transparent 60%)}
+  .masthead img{width:100%;max-width:740px;display:block;margin:0 auto}
+  .band{background:var(--gold);padding:22px 0}
+  .band .inner{max-width:1040px;margin:0 auto;padding:0 22px}
+  .band h1{font-family:var(--mono);font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--black);margin:0 0 8px;font-size:clamp(24px,4.6vw,38px);line-height:1}
+  .band .sub{font-family:var(--mono);font-weight:500;color:#2a2305;margin:0;font-size:clamp(12px,2.2vw,15px)}
+  .wrap{max-width:1040px;margin:0 auto;padding:26px 22px 90px}
+  .intro{font-size:13.5px;color:#33302a;margin:0 0 22px;max-width:80ch}
+  .intro b{color:var(--ink)}
+  .summary{display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px;margin:0 0 8px}
+  .bigpct{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1;color:var(--ink)}
+  .bigpct small{font-size:12px;font-weight:500;color:var(--muted);margin-left:8px;letter-spacing:.02em}
+  .bar{flex:1;min-width:200px;height:12px;border-radius:99px;background:#EFECE2;overflow:hidden;border:1px solid var(--line)}
+  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta));transition:width .35s ease}
+  .counts{display:flex;gap:7px;flex-wrap:wrap}
+  .pillcount{font-family:var(--mono);font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:#fff;letter-spacing:.02em}
+  .pillcount b{font-weight:700}
+  .pillcount.done{color:var(--gold-d)}
+  .pillcount.prog{color:#0b8b95}
+  .pillcount.todo{color:var(--muted)}
+  .pillcount.block{color:var(--magenta)}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+  .btn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 13px;border-radius:8px;transition:.15s}
+  .btn:hover{border-color:var(--gold-d);background:#fffdf3}
+  .live-strip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:6px;background:#f0f0f0;font-size:11px;font-weight:600;margin-left:auto}
+  .live-strip.live-on{background:#e0f7f6}
+  .live-dot{width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block}
+  .live-on .live-dot{background:#15B8C4}
+  .timeline{position:relative;margin-left:7px;padding-left:30px;border-left:3px solid var(--gold)}
+  .row{position:relative;margin:0 0 18px}
+  .row::before{content:"";position:absolute;left:-41px;top:18px;width:16px;height:16px;border-radius:50%;background:#fff;border:4px solid var(--gold);box-shadow:0 0 0 4px #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+  .row[data-status="in-progress"]::before{border-color:#FFA500;background:#FFA500;content:""}
+  .row[data-status="complete"]::before{background:#0E9F6E;border-color:#0E9F6E;content:"✓";color:#fff;font-size:12px}
+  .row[data-status="blocked"]::before{border-color:var(--magenta);background:var(--magenta)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;transition:.2s}
+  .row[data-status="in-progress"] .card{background:#effbfc;border-color:#bce8ec}
+  .row[data-status="complete"] .card{background:#fdf7e2;border-color:#eddca0}
+  .row[data-status="blocked"] .card{background:#fbeaf6;border-color:#efc6e6}
+  .card-top{display:flex;flex-wrap:wrap;align-items:center;gap:7px 12px}
+  .date{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+  .title{font-family:var(--mono);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.01em;margin:0;flex:1;min-width:150px;color:var(--ink)}
+  .row[data-status="complete"] .title{text-decoration:line-through;text-decoration-color:var(--gold-d);text-decoration-thickness:2px}
+  .ownpill{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:99px;white-space:nowrap}
+  .o-otw{background:var(--gold);color:#2a2305}
+  .o-joint{background:var(--joint);color:#3a382f}
+  .o-skylark{background:var(--skylark);color:var(--skylark-tx)}
+  .o-bv{background:linear-gradient(120deg,var(--cyan),var(--violet),var(--magenta));color:#fff}
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:13px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+  .seg button{font-family:var(--mono);font-size:11.5px;font-weight:600;cursor:pointer;border:0;background:transparent;color:var(--muted);padding:7px 12px;border-right:1px solid var(--line);transition:.12s;white-space:nowrap}
+  .seg button:last-child{border-right:0}
+  .seg button:hover{background:#faf8f0}
+  .seg button[aria-pressed="true"]{background:var(--gold);color:var(--black);font-weight:700}
+  .task-checklist{margin:10px 0 0;padding:8px 0 0;border-top:1px solid var(--line)}
+  .task-item{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:13px}
+  .task-item input[type="checkbox"]{cursor:pointer;width:16px;height:16px;accent-color:var(--gold)}
+  .task-item label{cursor:pointer;flex:1;color:#3c392f}
+  .comments-section{margin-top:15px;padding-top:12px;border-top:1px solid var(--line)}
+  .comments-list{margin-bottom:10px}
+  .comment-item{margin:10px 0;padding:10px;background:#faf9f5;border-radius:6px;font-size:12px}
+  .comment-header{display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:11px;color:var(--muted)}
+  .comment-timestamp{flex:1}
+  .comment-actions{display:flex;gap:6px}
+  .comment-btn{font-family:var(--mono);font-size:10px;padding:3px 8px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;border-radius:4px;transition:.1s}
+  .comment-btn:hover{background:#fff;color:var(--ink)}
+  .comment-text{color:var(--ink);line-height:1.4}
+</style>
+</head>
+<body>
+
+<div class="gradbar"></div>
+
+<div class="masthead">
+  <svg width="400" height="80" viewBox="0 0 400 80" style="max-width:100%;height:auto">
+    <text x="50%" y="50%" font-family="IBM Plex Mono" font-size="42" font-weight="700" text-anchor="middle" dominant-baseline="middle" fill="white" letter-spacing="2">
+      BLOCKVOICES
+    </text>
+  </svg>
+</div>
+
+<div class="band">
+  <div class="inner">
+    <h1>Project Tracker</h1>
+    <p class="sub">Live status across all team members</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <p class="intro">Team and client see all updates <b>instantly</b>. Change a status, everyone's page updates within seconds.</p>
+
+  <div class="summary">
+    <div class="bigpct"><span id="pct">0</span>%<small>complete</small></div>
+    <div class="bar"><i id="barfill" style="width:0%"></i></div>
+    <div class="counts">
+      <div class="pillcount done"><b id="cDone">0</b> done</div>
+      <div class="pillcount todo"><b id="cTodo">0</b> to do</div>
+    </div>
+    <div class="live-strip" id="liveStrip">
+      <span class="live-dot"></span>
+      <span id="liveTxt">Connecting...</span>
+    </div>
+  </div>
+
+  <div id="timeline" class="timeline"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  var SUPABASE_URL = "https://exjliabrkcjhwscyjgmu.supabase.co";
+  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4amxpYWJya2NqaHdzY3lqZ211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTAzOTEsImV4cCI6MjA5NzM4NjM5MX0.tt0vx8486B7Foktev4c9ndaVrAzF5510nrvw49VIMgg";
+
+  var MILESTONES=[
+    {id:"strategy",title:"Strategy & Creative Direction",date:"Jan 15",owner:"Joint",tasks:[]},
+    {id:"kickoff",title:"Kickoff & Deposit",date:"Jan 20",owner:"Joint",tasks:["Deposit received","Scope locked","Recording logistics"]},
+    {id:"speaker1",title:"Speaker 1 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"speaker2",title:"Speaker 2 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"speaker3",title:"Speaker 3 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"speaker4",title:"Speaker 4 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"speaker5",title:"Speaker 5 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"speaker6",title:"Speaker 6 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"speaker7",title:"Speaker 7 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"speaker8",title:"Speaker 8 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"speaker9",title:"Speaker 9 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"recording",title:"Recording (Zoom)",date:"Feb 5",owner:"Outside The Wire",tasks:["Conduct 9 interviews","Record voiceover","Record narration","Retakes if needed"]},
+    {id:"speaker_content",title:"Speaker Content from Interviews",date:"Feb 12",owner:"Outside The Wire",tasks:["Receive speaker files","Organize by topic","Quality check","Archive"]},
+    {id:"editing",title:"Editing & Assembly",date:"Feb 28",owner:"Outside The Wire",tasks:["Trim sessions","Assemble videos","Quality check"]},
+    {id:"branding",title:"Branding + B-Roll",date:"Mar 10",owner:"Joint",tasks:["Lower-thirds","Titles","Logo applied","8 AI B-roll videos"]},
+    {id:"social",title:"Social Promo Flyers",date:"Mar 15",owner:"Outside The Wire",tasks:["Story flyers","Post flyers","Series branding"]},
+    {id:"review",title:"Review & Revisions",date:"Mar 20",owner:"Joint",tasks:["Round 1 feedback","Round 2 feedback","Notes incorporated"]},
+    {id:"delivery",title:"Final Delivery",date:"Mar 28",owner:"Outside The Wire",tasks:["Export videos","Deliver flyers","Invoice balance"]},
+    {id:"summit",title:"BlockVoices Summit",date:"Apr 15",owner:"BlockVoices",event:true}
+  ];
+
+  var OWNERS={"Outside The Wire":"o-otw","Joint":"o-joint","BlockVoices":"o-bv"};
+  var state={},sb=null,lastSync=0;
+
+  function initState(){
+    var s={};
+    MILESTONES.forEach(function(m){
+      s[m.id]={status:"todo",comments:[]};
+      if(m.tasks)s[m.id].tasks={};
+    });
+    s.strategy.status="complete";
+    return s;
+  }
+
+  function saveToDb(id){
+    if(!sb)return;
+    var row=state[id];
+    sb.from("tracker").upsert({id:id,status:row.status,comments:JSON.stringify(row.comments),updated_at:new Date().toISOString()}).catch(function(e){console.error(e);});
+  }
+
+  function syncFromDb(){
+    if(!sb)return;
+    var now=Date.now();
+    if(now-lastSync<1000)return;
+    lastSync=now;
+
+    sb.from("tracker").select("*").then(function(res){
+      if(res.error||!res.data)return;
+      res.data.forEach(function(row){
+        if(!state[row.id])return;
+        state[row.id].status=row.status||state[row.id].status;
+        if(row.comments){
+          try{state[row.id].comments=typeof row.comments==="string"?JSON.parse(row.comments):row.comments;}
+          catch(e){}
+        }
+      });
+      render();
+      recompute();
+    }).catch(function(e){});
+  }
+
+  function render(){
+    var tl=document.getElementById("timeline");
+    tl.innerHTML="";
+    MILESTONES.forEach(function(m){
+      var row=document.createElement("div");
+      row.className="row";
+      row.setAttribute("data-status",state[m.id].status);
+
+      var card=document.createElement("div");
+      card.className="card";
+
+      var top=document.createElement("div");
+      top.className="card-top";
+      top.innerHTML='<span class="date">'+m.date+'</span><h2 class="title">'+m.title+(m.event?' <span style="font-size:10px;font-weight:600;color:var(--muted)">(event)</span>':'')+'</h2><span class="ownpill '+(OWNERS[m.owner]||'')+'">'+m.owner+'</span>';
+      card.appendChild(top);
+
+      var seg=document.createElement("div");
+      seg.className="seg";
+      ["To Do","In Progress","Done","Blocked"].forEach(function(label,idx){
+        var statuses=["todo","in-progress","complete","blocked"];
+        var s=statuses[idx];
+        var b=document.createElement("button");
+        b.textContent=label;
+        b.setAttribute("aria-pressed",String((state[m.id].status||"todo")===s));
+        b.addEventListener("click",function(){state[m.id].status=s;saveToDb(m.id);render();recompute();});
+        seg.appendChild(b);
+      });
+      card.appendChild(seg);
+
+      if(m.tasks&&m.tasks.length){
+        var cl=document.createElement("div");
+        cl.className="task-checklist";
+        m.tasks.forEach(function(tk,i){
+          var item=document.createElement("div");
+          item.className="task-item";
+          var chk=document.createElement("input");
+          chk.type="checkbox";
+          chk.id="t_"+m.id+"_"+i;
+          chk.checked=state[m.id].tasks[i]||false;
+          chk.addEventListener("change",function(){state[m.id].tasks[i]=chk.checked;saveToDb(m.id);render();recompute();});
+          var lab=document.createElement("label");
+          lab.setAttribute("for",chk.id);
+          lab.textContent=tk;
+          item.appendChild(chk);
+          item.appendChild(lab);
+          cl.appendChild(item);
+        });
+        card.appendChild(cl);
+      }
+
+      var cs=document.createElement("div");
+      cs.className="comments-section";
+      var cl=document.createElement("div");
+      cl.className="comments-list";
+      if(state[m.id].comments){
+        state[m.id].comments.forEach(function(c,idx){
+          var ci=document.createElement("div");
+          ci.className="comment-item";
+          var dt=new Date(c.timestamp);
+          ci.innerHTML='<div class="comment-header"><div class="comment-timestamp">'+dt.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+'</div></div><div class="comment-text">'+c.text+'</div>';
+          cl.appendChild(ci);
+        });
+      }
+      cs.appendChild(cl);
+
+      var form=document.createElement("div");
+      form.className="comment-form";
+      var input=document.createElement("input");
+      input.type="text";
+      input.className="comment-input";
+      input.placeholder="Add a note…";
+      input.style.cssText="width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;font-family:var(--mono);font-size:12px;margin-bottom:8px";
+      var btn=document.createElement("button");
+      btn.textContent="Add Comment";
+      btn.className="btn";
+      btn.addEventListener("click",function(){
+        var text=input.value.trim();
+        if(!text)return;
+        state[m.id].comments.push({text:text,timestamp:new Date().toISOString()});
+        input.value="";
+        saveToDb(m.id);
+        render();
+      });
+      input.addEventListener("keypress",function(e){if(e.key==="Enter"){btn.click();}});
+      form.appendChild(input);
+      form.appendChild(btn);
+      cs.appendChild(form);
+      card.appendChild(cs);
+
+      row.appendChild(card);
+      tl.appendChild(row);
+    });
+  }
+
+  function recompute(){
+    var deliv=MILESTONES.filter(function(m){return !m.event;});
+    var total=deliv.length;
+    var done=0;
+    deliv.forEach(function(m){
+      if(state[m.id].status==="complete")done++;
+    });
+    var pct=total?Math.round(done/total*100):0;
+    document.getElementById("pct").textContent=pct;
+    document.getElementById("cDone").textContent=done;
+    document.getElementById("cTodo").textContent=total-done;
+    document.getElementById("barfill").style.width=pct+"%";
+  }
+
+  function startSync(){
+    sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    syncFromDb();
+    document.getElementById("liveStrip").classList.add("live-on");
+    document.getElementById("liveTxt").textContent="Live — synced";
+    setInterval(syncFromDb,3000);
+  }
+
+  state=initState();
+  render();
+  recompute();
+
+  startSync();
+})();
+</script>
+
+</body>
+</html>
