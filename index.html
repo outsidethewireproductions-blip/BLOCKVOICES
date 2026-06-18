@@ -121,12 +121,30 @@
   }
 </style>
 <style>
-  .status-strip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 4px;font-family:var(--mono);font-size:12.5px}
-  .live-dot{width:10px;height:10px;border-radius:50%;background:#9A968A;display:inline-block;box-shadow:0 0 0 3px rgba(0,0,0,.04)}
-  .live-on .live-dot{background:#15B8C4;box-shadow:0 0 0 3px rgba(21,184,196,.18)}
-  .live-txt{color:var(--muted)} .live-on .live-txt{color:#0b8b95;font-weight:600}
-  .cfgwarn{background:#fbeaf6;border:1px solid #efc6e6;color:#7a1f66;border-radius:8px;padding:9px 12px;font-family:var(--mono);font-size:12px;margin:10px 0 0}
-  .cfgwarn b{color:#5a164c} .cfgwarn code{background:#fff;padding:1px 5px;border-radius:4px}
+  .task-item{background:#fff;border:1px solid var(--line);border-radius:12px;margin:0 0 12px;overflow:hidden;transition:.2s}
+  .task-item[data-done="true"]{opacity:.7}
+  .task-header{display:flex;align-items:flex-start;gap:12px;padding:15px 17px;cursor:pointer;user-select:none}
+  .task-header:hover{background:#faf8f0}
+  .task-check{width:20px;height:20px;border:2px solid var(--line);border-radius:6px;margin-top:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .task-item[data-done="true"] .task-check{background:var(--gold);border-color:var(--gold);color:#2a2305;font-weight:700}
+  .task-title{flex:1;min-width:0}
+  .task-title h3{margin:0 0 3px;font-family:var(--mono);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.01em;color:var(--ink)}
+  .task-item[data-done="true"] .task-title h3{text-decoration:line-through;text-decoration-color:var(--gold-d);text-decoration-thickness:2px}
+  .task-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+  .task-date{font-family:var(--mono);font-weight:600;color:var(--ink)}
+  .task-pill{background:var(--gold);color:#2a2305;padding:3px 9px;border-radius:99px;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+  .task-pill.joint{background:var(--joint);color:#3a382f}
+  .task-pill.skylark{background:var(--skylark);color:var(--skylark-tx)}
+  .task-pill.bv{background:linear-gradient(120deg,var(--cyan),var(--violet),var(--magenta));color:#fff}
+  .task-toggle{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;flex-shrink:0}
+  .task-body{display:none;padding:0 17px 15px;border-top:1px solid var(--line);background:#fffdf7}
+  .task-item[data-open="true"] .task-body{display:block}
+  .task-desc{font-size:13.5px;color:#3c392f;margin:12px 0 12px;line-height:1.5}
+  .task-notes{display:flex;flex-direction:column;gap:7px;margin:0}
+  .task-notes label{font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink)}
+  .task-notes input{font-family:var(--mono);font-size:12.5px;border:1px dashed var(--line);border-radius:8px;padding:8px 10px;background:#fff;color:var(--ink)}
+  .task-notes input::placeholder{color:#b3afa2}
+  .task-notes input:focus{outline:none;border-color:var(--gold-d);border-style:solid;background:#fff}
 </style>
 
 </head>
@@ -139,9 +157,9 @@
     <p class="sub">2026 BlockVoices Summit&nbsp; ·&nbsp; August 19–20, 2026&nbsp; ·&nbsp; Martha's Vineyard&nbsp; ·&nbsp; LIVE tracker</p>
   </div></div>
   <div class="wrap">
-    <p class="intro">Production schedule for the BlockVoices video series by Outside The Wire Productions. <b>This is the live tracker — anyone on the team sets a phase To&nbsp;Do, In&nbsp;Progress, Done, or Blocked and everyone (including the client) sees it update in real time.</b></p>
+    <p class="intro">Production schedule for the BlockVoices video series by Outside The Wire Productions. <b>Check off each task as complete — everyone sees the updates live.</b></p>
 
-    <div id="cfgwarn" class="cfgwarn" style="display:none"><b>Local mode:</b> Supabase keys not set yet — changes save only in this browser. Add your keys in <code>index.html</code> (see README) to turn on real-time sharing.</div>
+    <div id="cfgwarn" class="cfgwarn" style="display:none"><b>Local mode:</b> Supabase keys not set yet — changes save only in this browser. Add your keys in <code>index.html</code> to turn on real-time sharing.</div>
 
     <div class="status-strip" id="liveStrip"><span class="live-dot"></span><span class="live-txt" id="liveTxt">Connecting…</span></div>
 
@@ -150,9 +168,7 @@
       <div class="bar"><i id="barfill"></i></div>
       <div class="counts">
         <span class="pillcount done"><b id="cDone">0</b> Done</span>
-        <span class="pillcount prog"><b id="cProg">0</b> In&nbsp;progress</span>
         <span class="pillcount todo"><b id="cTodo">0</b> To&nbsp;do</span>
-        <span class="pillcount block"><b id="cBlock">0</b> Blocked</span>
       </div>
     </div>
 
@@ -164,95 +180,110 @@
       <span class="legdot"><i class="d-joint"></i>Joint</span>
     </div>
 
-    <div class="timeline" id="timeline"></div>
+    <div id="tasklist"></div>
 
-    <footer><b>Owners:</b> BlockVoices is the event; Outside The Wire Productions creates the products. Milestone dates are targets and may shift with deposit timing, speaker availability, and review turnaround. Recording must complete by June&nbsp;30; two revision rounds are included per video; final delivery lands at least two weeks before the August&nbsp;19–20 Summit. &nbsp;·&nbsp; Skylark B-roll &amp; backdrop items provided, not billed; social promo flyers included at no extra cost.</footer>
+    <footer><b>Owners:</b> BlockVoices is the event; Outside The Wire Productions creates the products. Milestone dates are targets and may shift with deposit timing, speaker availability, and review turnaround. Recording must complete by June&nbsp;30; two revision rounds are included per video; final delivery lands at least two weeks before the August&nbsp;19–20 Summit.</footer>
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   "use strict";
-  // ====== CONFIG: paste your Supabase project values here ======
-  var SUPABASE_URL = "https://exjliabrkcjhwscyjgmu.supabase.co";       // e.g. https://abcd1234.supabase.co
+  var SUPABASE_URL = "https://exjliabrkcjhwscyjgmu.supabase.co";
   var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4amxpYWJya2NqaHdzY3lqZ211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTAzOTEsImV4cCI6MjA5NzM4NjM5MX0.tt0vx8486B7Foktev4c9ndaVrAzF5510nrvw49VIMgg";
-  // =============================================================
   var LIVE = SUPABASE_URL.indexOf("http")===0 && SUPABASE_ANON_KEY.length>20 && SUPABASE_ANON_KEY.indexOf("YOUR_")<0;
 
   var OWNERS={"Outside The Wire":"o-otw","Skylark":"o-skylark","BlockVoices":"o-bv","Joint":"o-joint"};
+  
   var MILESTONES=[
-    {id:"strategy",date:"Delivered",title:"Strategy & Creative Direction",owner:"Joint",desc:"Series framework + two production guides. Co-developed with Skylark.",def:"complete"},
-    {id:"kickoff",date:"Jun 16",title:"Kickoff & Deposit",owner:"Joint",desc:"Deposit received authorizes the start. Scope, speaker list, topics, and recording logistics locked with BlockVoices; project timeline (this document) shared.",def:"todo"},
-    {id:"speaker",date:"Jun 16-22",title:"Speaker Packages (x9)",owner:"Outside The Wire",desc:"Mission/intent, details, and questions built for each of the nine speakers and sent to participants before recording.",def:"todo"},
-    {id:"recording",date:"By Jun 30",title:"Recording",owner:"Outside The Wire",desc:"Interviews recorded and co-conducted via OBS; voiceover and narration recorded. 90-second answer cap; retakes allowed.",def:"todo"},
-    {id:"editing",date:"Jul 1-14",title:"Editing & Assembly",owner:"Outside The Wire",desc:"Trim and assemble the nine sessions into clean, straight-cut topic videos.",def:"todo"},
-    {id:"branding",date:"Jul 8-18",title:"Branding + B-Roll",owner:"Skylark",desc:"Lower-thirds, titles, and BlockVoices logo applied. Skylark AI B-roll series and series backdrop integrated. (Skylark items provided, not billed.)",def:"todo"},
-    {id:"social",date:"Jul 15-Aug",title:"Social Promo Flyers",owner:"Outside The Wire",desc:"Social media story and post flyers promoting the video series in the run-up to the Summit, in the series branding. Included at no extra cost.",def:"todo"},
-    {id:"review",date:"Jul 20-27",title:"Review & Revisions",owner:"Joint",desc:"Two review rounds per video with BlockVoices; notes incorporated.",def:"todo"},
-    {id:"final",date:"By Aug 5",title:"Final Delivery",owner:"Outside The Wire",desc:"Nine final edited topic videos and the social promo flyers delivered at least two weeks before the Summit. Balance due upon completion.",def:"todo"},
-    {id:"summit",date:"Aug 19-20 2026",title:"BlockVoices Summit",owner:"BlockVoices",desc:"Two-day Thought Leadership Summit + Gala on Martha's Vineyard. The video series premieres at the event.",def:"todo",event:true}
+    {id:"strategy",date:"Delivered",title:"Strategy & Creative Direction",owner:"Joint",desc:"Series framework + two production guides. Co-developed with Skylark."},
+    {id:"kickoff",date:"Jun 16",title:"Kickoff & Deposit",owner:"Joint",desc:"Deposit received authorizes the start. Scope, speaker list, topics, and recording logistics locked with BlockVoices."},
+    {id:"speaker",date:"Jun 16-22",title:"Speaker Packages (×9)",owner:"Outside The Wire",desc:"Mission/intent, details, and questions built for each of the nine speakers."},
+    {id:"recording",date:"By Jun 30",title:"Recording (Zoom)",owner:"Outside The Wire",desc:"Interviews recorded via Zoom; voiceover and narration recorded. 90-second answer cap; retakes allowed."},
+    {id:"editing",date:"Jul 1-14",title:"Editing & Assembly",owner:"Outside The Wire",desc:"Trim and assemble the nine sessions into clean, straight-cut topic videos."},
+    {id:"branding",date:"Jul 8-18",title:"Branding + B-Roll",owner:"Joint",desc:"Lower-thirds, titles, and BlockVoices logo applied. Skylark AI B-roll and series backdrop integrated."},
+    {id:"social",date:"Jul 15-Aug",title:"Social Promo Flyers",owner:"Outside The Wire",desc:"Social media story and post flyers promoting the video series in the run-up to the Summit."},
+    {id:"review",date:"Jul 20-27",title:"Review & Revisions",owner:"Joint",desc:"Two review rounds per video with BlockVoices; notes incorporated."},
+    {id:"final",date:"By Aug 5",title:"Final Delivery",owner:"Outside The Wire",desc:"Nine final edited topic videos and the social promo flyers delivered at least two weeks before the Summit."},
+    {id:"summit",date:"Aug 19-20 2026",title:"BlockVoices Summit",owner:"BlockVoices",desc:"Two-day Thought Leadership Summit + Gala on Martha's Vineyard. The video series premieres at the event.",event:true}
   ];
-  var STATUSES=[{s:"todo",label:"To Do"},{s:"in-progress",label:"In Progress"},{s:"complete",label:"Done"},{s:"blocked",label:"Blocked"}];
+
   var state={}, sb=null;
-  function defaults(){var d={};MILESTONES.forEach(function(m){d[m.id]={status:m.def||"todo",note:""};});return d;}
+  function defaults(){var d={};MILESTONES.forEach(function(m){d[m.id]={done:m.id==="strategy",note:"",open:false};});return d;}
   function setLive(on,msg){var strip=document.getElementById("liveStrip");var txt=document.getElementById("liveTxt");if(on)strip.classList.add("live-on");else strip.classList.remove("live-on");txt.textContent=msg;}
-  function lsLoad(){try{var r=localStorage.getItem("bv_tracker");if(r){var o=JSON.parse(r);Object.keys(o).forEach(function(id){if(state[id])state[id]=o[id];});}}catch(e){}}
-  function lsSave(){try{localStorage.setItem("bv_tracker",JSON.stringify(state));}catch(e){}}
+  function lsLoad(){try{var r=localStorage.getItem("bv_checklist");if(r){var o=JSON.parse(r);Object.keys(o).forEach(function(id){if(state[id])state[id]=o[id];});}}catch(e){}}
+  function lsSave(){try{localStorage.setItem("bv_checklist",JSON.stringify(state));}catch(e){}}
   function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;}
   function render(){
-    var tl=document.getElementById("timeline");tl.innerHTML="";
+    var tl=document.getElementById("tasklist");tl.innerHTML="";
     MILESTONES.forEach(function(m){
-      var st=state[m.id].status;
-      var row=el("div","row");row.setAttribute("data-status",st);
-      var card=el("div","card");
-      var top=el("div","card-top");
-      top.appendChild(el("span","date",m.date));
-      top.appendChild(el("h2","title",m.title+(m.event?" <span style='font-size:10px;font-weight:600;color:var(--muted)'>(event)</span>":"")));
-      top.appendChild(el("span","ownpill "+(OWNERS[m.owner]||""),m.owner));
-      card.appendChild(top);
-      card.appendChild(el("p","desc-line",m.desc));
-      var controls=el("div","controls");var seg=el("div","seg");
-      STATUSES.forEach(function(opt){
-        var bn=el("button",null,opt.label);
-        bn.setAttribute("data-s",opt.s);
-        bn.setAttribute("aria-pressed",String(st===opt.s));
-        bn.addEventListener("click",function(){state[m.id].status=opt.s;render();recompute();persist(m.id);});
-        seg.appendChild(bn);
-      });
-      controls.appendChild(seg);
-      var note=el("input","notes");note.type="text";note.value=state[m.id].note||"";
-      note.placeholder="Add a note (owner, blockers, links)…";
-      note.addEventListener("change",function(){state[m.id].note=note.value;persist(m.id);});
-      controls.appendChild(note);
-      card.appendChild(controls);row.appendChild(card);tl.appendChild(row);
+      var item=el("div","task-item");
+      item.setAttribute("data-done",String(state[m.id].done));
+      item.setAttribute("data-open",String(state[m.id].open));
+      item.setAttribute("data-id",m.id);
+
+      var header=el("div","task-header");
+      header.addEventListener("click",function(e){if(e.target.tagName!=="INPUT"){state[m.id].open=!state[m.id].open;render();persist(m.id);}});
+
+      var chk=el("input","task-check");chk.type="checkbox";chk.checked=state[m.id].done;
+      chk.addEventListener("change",function(){state[m.id].done=chk.checked;render();recompute();persist(m.id);});
+      header.appendChild(chk);
+
+      var title=el("div","task-title");
+      var h3=el("h3",null,m.title+(m.event?" <span style='font-size:11px;font-weight:600;color:var(--muted)'>(event)</span>":""));
+      var meta=el("div","task-meta");
+      meta.appendChild(el("span","task-date",m.date));
+      meta.appendChild(el("span","task-pill "+(OWNERS[m.owner]||""),m.owner));
+      title.appendChild(h3);title.appendChild(meta);
+      header.appendChild(title);
+
+      var toggle=el("div","task-toggle",state[m.id].open?"−":"▸");
+      header.appendChild(toggle);
+      item.appendChild(header);
+
+      var body=el("div","task-body");
+      body.appendChild(el("p","task-desc",m.desc));
+      var notes=el("div","task-notes");
+      var lab=el("label",null,"Client notes");
+      var inp=el("input");inp.type="text";inp.value=state[m.id].note||"";inp.placeholder="Add context, links, blockers...";
+      inp.addEventListener("change",function(){state[m.id].note=inp.value;persist(m.id);});
+      notes.appendChild(lab);notes.appendChild(inp);
+      body.appendChild(notes);
+      item.appendChild(body);
+      tl.appendChild(item);
     });
   }
   function recompute(){
     var deliv=MILESTONES.filter(function(m){return !m.event;});var total=deliv.length;
-    var done=0,prog=0,todo=0,block=0;
-    MILESTONES.forEach(function(m){var s=state[m.id].status;if(s==="complete")done++;else if(s==="in-progress")prog++;else if(s==="blocked")block++;else todo++;});
-    var dd=deliv.filter(function(m){return state[m.id].status==="complete";}).length;
+    var done=0,todo=0;
+    MILESTONES.forEach(function(m){if(state[m.id].done)done++;else todo++;});
+    var dd=deliv.filter(function(m){return state[m.id].done;}).length;
     var pct=total?Math.round(dd/total*100):0;
     document.getElementById("pct").textContent=pct+"%";
     document.getElementById("fraction").textContent=dd+" of "+total+" deliverables done";
     document.getElementById("barfill").style.width=pct+"%";
-    document.getElementById("cDone").textContent=done;document.getElementById("cProg").textContent=prog;
-    document.getElementById("cTodo").textContent=todo;document.getElementById("cBlock").textContent=block;
+    document.getElementById("cDone").textContent=done;
+    document.getElementById("cTodo").textContent=todo;
   }
   function persist(id){
     if(LIVE && sb){
-      sb.from("tracker").upsert({id:id,status:state[id].status,note:state[id].note,updated_at:new Date().toISOString()}).then(function(res){
+      sb.from("tracker").upsert({id:id,status:(state[id].done?"complete":"todo"),note:state[id].note,updated_at:new Date().toISOString()}).then(function(res){
         if(res.error){console.error(res.error);setLive(false,"Save error — check console");}
       });
     } else { lsSave(); }
   }
-  function applyRow(r){if(r&&state[r.id]){state[r.id].status=r.status||state[r.id].status;state[r.id].note=(r.note==null?state[r.id].note:r.note);}}
+  function applyRow(r){
+    if(r&&state[r.id]){
+      state[r.id].done=(r.status==="complete");
+      state[r.id].note=(r.note==null?state[r.id].note:r.note);
+    }
+  }
   function startLive(){
     sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     sb.from("tracker").select("*").then(function(res){
       if(res.error){setLive(false,"Connection error — using local");LIVE=false;lsLoad();render();recompute();return;}
       if(!res.data||res.data.length===0){
-        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,note:"",updated_at:new Date().toISOString()};});
+        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].done?"complete":"todo",note:"",updated_at:new Date().toISOString()};});
         sb.from("tracker").upsert(seed).then(function(){});
       } else { res.data.forEach(applyRow); }
       render();recompute();setLive(true,"Live — synced across everyone");
