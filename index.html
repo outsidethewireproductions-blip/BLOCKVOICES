@@ -450,18 +450,15 @@ window.blockvoicesSounds.init();
   }
   function persist(id){
     if(LIVE && sb){
-      sb.from("tracker").upsert({id:id,status:state[id].status,tasks:JSON.stringify(state[id].tasks),comments:JSON.stringify(state[id].comments),updated_at:new Date().toISOString()}).then(function(res){
+      sb.from("tracker").upsert({id:id,status:state[id].status,comments:JSON.stringify(state[id].comments),updated_at:new Date().toISOString()}).then(function(res){
         if(res.error){console.error(res.error);setLive(false,"Save error");}
       });
-    } else { lsSave(); }
+    }
+    lsSave();
   }
   function applyRow(r){
     if(r&&state[r.id]){
       state[r.id].status=r.status||state[r.id].status;
-      if(r.tasks){
-        try{state[r.id].tasks=typeof r.tasks==="string"?JSON.parse(r.tasks):r.tasks;}
-        catch(e){}
-      }
       if(r.comments){
         try{state[r.id].comments=typeof r.comments==="string"?JSON.parse(r.comments):r.comments;}
         catch(e){state[r.id].comments=[];}
@@ -632,7 +629,7 @@ window.blockvoicesSounds.init();
     sb.from("tracker").select("*").then(function(res){
       if(res.error){setLive(false,"Connection error — using local");LIVE=false;lsLoad();render();recompute();return;}
       if(!res.data||res.data.length===0){
-        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,tasks:JSON.stringify(state[m.id].tasks),comments:"[]",updated_at:new Date().toISOString()};});
+        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,comments:"[]",updated_at:new Date().toISOString()};});
         sb.from("tracker").upsert(seed).then(function(){});
       } else { res.data.forEach(applyRow); }
       render();recompute();setLive(true,"Live — synced across everyone");
