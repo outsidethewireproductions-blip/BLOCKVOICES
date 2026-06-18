@@ -633,7 +633,10 @@ window.blockvoicesSounds.init();
         sb.from("tracker").upsert(seed).then(function(){});
       } else { res.data.forEach(applyRow); }
       render();recompute();setLive(true,"Live — synced across everyone");
-      sb.channel("tracker-changes").on("postgres_changes",{event:"*",schema:"public",table:"tracker"},function(payload){applyRow(payload.new);render();recompute();}).subscribe();
+      var sub=sb.channel("tracker-changes").on("postgres_changes",{event:"*",schema:"public",table:"tracker"},function(payload){
+        if(payload.new&&payload.new.id){applyRow(payload.new);render();recompute();}
+      }).subscribe(function(status){});
+      setInterval(function(){sb.from("tracker").select("*").then(function(r){if(r.data)r.data.forEach(applyRow);render();recompute();});},3000);
     });
   }
   state=defaults();
