@@ -121,7 +121,8 @@
   .comment-edit-actions{display:flex;gap:6px}
   .comment-edit-actions .comment-btn{padding:5px 9px}
 
-  .comment-form{display:flex;gap:8px;align-items:flex-start}
+  .comment-form{display:flex;flex-direction:column;gap:8px}
+  .comment-form-row{display:flex;gap:8px;align-items:flex-start}
   .comment-input{flex:1;min-width:160px;font-family:var(--mono);font-size:12.5px;color:var(--ink);
     border:1px dashed var(--line);border-radius:8px;padding:8px 10px;background:#fffdf7}
   .comment-input::placeholder{color:#b3afa2}
@@ -130,6 +131,26 @@
     background:#fff;color:var(--ink);padding:8px 13px;border-radius:8px;transition:.15s;white-space:nowrap}
   .comment-submit:hover{border-color:var(--gold-d);background:#fffdf3}
   .comment-submit:active{transform:scale(.98)}
+
+  /* FILE ATTACHMENTS */
+  .file-input-wrapper{position:relative;overflow:hidden;display:inline-block}
+  .file-input-label{font-family:var(--mono);font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--line);
+    background:#fff;color:var(--ink);padding:8px 13px;border-radius:8px;transition:.15s;white-space:nowrap;display:inline-block}
+  .file-input-label:hover{border-color:var(--gold-d);background:#fffdf3}
+  .file-input-label.uploading{border-color:var(--cyan);background:#e8fbfc;color:var(--cyan)}
+  .file-input-hidden{display:none}
+  .attachments-list{margin-top:6px;display:flex;flex-direction:column;gap:6px}
+  .attachment-item{background:#f5f2eb;border:1px solid var(--line);border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:11px}
+  .attachment-item.uploading{border-color:var(--cyan);background:#e8fbfc}
+  .attachment-icon{width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700}
+  .attachment-info{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+  .attachment-name{color:var(--ink);font-weight:500;word-break:break-all;text-decoration:none;cursor:pointer}
+  .attachment-name:hover{color:var(--gold-d);text-decoration:underline}
+  .attachment-size{color:var(--muted);font-size:10px}
+  .attachment-delete{cursor:pointer;color:var(--muted);font-weight:700;padding:2px 6px;transition:.12s}
+  .attachment-delete:hover{color:var(--magenta);background:#fff5f9;border-radius:4px}
+  .attachment-progress{width:40px;height:4px;background:#e6e2d6;border-radius:2px;overflow:hidden}
+  .attachment-progress-bar{height:100%;background:linear-gradient(90deg,var(--cyan),var(--violet));width:0%;transition:width .3s}
 
   footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;font-family:var(--mono)}
   footer b{color:var(--ink)}
@@ -248,6 +269,7 @@ window.blockvoicesSounds.init();
   var SUPABASE_URL = "https://exjliabrkcjhwscyjgmu.supabase.co";
   var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4amxpYWJya2NqaHdzY3lqZ211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTAzOTEsImV4cCI6MjA5NzM4NjM5MX0.tt0vx8486B7Foktev4c9ndaVrAzF5510nrvw49VIMgg";
   var LIVE = SUPABASE_URL.indexOf("http")===0 && SUPABASE_ANON_KEY.length>20 && SUPABASE_ANON_KEY.indexOf("YOUR_")<0;
+  // NOTE: Ensure "tracker-attachments" bucket exists in Supabase Storage and is set to public-readable
 
   var OWNERS={"Outside The Wire":"o-otw","Skylark":"o-skylark","BlockVoices":"o-bv","Joint":"o-joint"};
   
@@ -340,22 +362,61 @@ window.blockvoicesSounds.init();
           text.textContent=c.text;
           commentItem.appendChild(text);
 
+          if(c.attachments&&c.attachments.length>0){
+            var attachmentsDiv=el("div","attachments-list");
+            c.attachments.forEach(function(att,attIdx){
+              var attItem=el("div","attachment-item");
+              var icon=el("div","attachment-icon");icon.textContent="📄";
+              var info=el("div","attachment-info");
+              var link=el("a","attachment-name");link.href=att.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent=att.filename;
+              var size=el("div","attachment-size");size.textContent=formatFileSize(att.size);
+              info.appendChild(link);info.appendChild(size);
+              var delBtn=el("div","attachment-delete");delBtn.textContent="✕";
+              delBtn.addEventListener("click",function(){deleteAttachment(m.id,idx,attIdx);});
+              attItem.appendChild(icon);attItem.appendChild(info);attItem.appendChild(delBtn);
+              attachmentsDiv.appendChild(attItem);
+            });
+            commentItem.appendChild(attachmentsDiv);
+          }
+
           commentsList.appendChild(commentItem);
         });
       }
       commentsSection.appendChild(commentsList);
 
       var form=el("div","comment-form");
+      var formRow=el("div","comment-form-row");
+
       var input=el("input","comment-input");input.type="text";
       input.placeholder="Add a comment (owner, blockers, links)…";
       input.setAttribute("data-milestone-id",m.id);
 
       var submitBtn=el("button","comment-submit");submitBtn.type="button";submitBtn.textContent="Comment";
-      submitBtn.addEventListener("click",function(){addComment(m.id,input);});
-      input.addEventListener("keypress",function(e){if(e.key==="Enter"){addComment(m.id,input);}});
+      submitBtn.addEventListener("click",function(){addComment(m.id,input,m);});
+      input.addEventListener("keypress",function(e){if(e.key==="Enter"){addComment(m.id,input,m);}});
 
-      form.appendChild(input);
-      form.appendChild(submitBtn);
+      var fileWrapper=el("div","file-input-wrapper");
+      var fileLabel=el("label","file-input-label");fileLabel.textContent="📎 Attach";
+      var fileInput=el("input");fileInput.type="file";fileInput.multiple=true;
+      fileInput.setAttribute("class","file-input-hidden");
+      fileInput.setAttribute("accept",".pdf,.png,.jpg,.jpeg,.doc,.docx,.mp4,.txt,.xls,.xlsx,.gif,.webp");
+      fileInput.setAttribute("data-milestone-id",m.id);
+      fileLabel.appendChild(fileInput);
+      fileWrapper.appendChild(fileLabel);
+
+      fileInput.addEventListener("change",function(e){handleFileSelect(e,m.id,form);});
+
+      formRow.appendChild(input);
+      formRow.appendChild(fileWrapper);
+      formRow.appendChild(submitBtn);
+
+      form.appendChild(formRow);
+
+      var attachmentsList=el("div","attachments-list");
+      attachmentsList.setAttribute("data-milestone-id",m.id);
+      attachmentsList.setAttribute("data-temp-attachments","true");
+      form.appendChild(attachmentsList);
+
       commentsSection.appendChild(form);
       card.appendChild(commentsSection);
       
@@ -392,11 +453,36 @@ window.blockvoicesSounds.init();
       }
     }
   }
-  function addComment(milestoneId,inputEl){
+  function addComment(milestoneId,inputEl,milestone){
     var text=inputEl.value.trim();
-    if(!text)return;
+    if(!text){
+      var tempList=document.querySelector('[data-milestone-id="'+milestoneId+'"][data-temp-attachments="true"]');
+      if(!tempList||!tempList.children.length)return;
+    }
     if(!state[milestoneId].comments)state[milestoneId].comments=[];
-    state[milestoneId].comments.push({text:text,timestamp:new Date().toISOString()});
+    var comment={text:text,timestamp:new Date().toISOString(),attachments:[]};
+
+    var tempList=document.querySelector('[data-milestone-id="'+milestoneId+'"][data-temp-attachments="true"]');
+    if(tempList){
+      var items=tempList.querySelectorAll('.attachment-item:not(.uploading)');
+      items.forEach(function(item){
+        var link=item.querySelector('.attachment-name');
+        var sizeText=item.querySelector('.attachment-size').textContent;
+        if(link.href){
+          var att={
+            filename:link.textContent,
+            url:link.href,
+            size:parseSizeText(sizeText),
+            uploadedAt:new Date().toISOString(),
+            type:''
+          };
+          comment.attachments.push(att);
+        }
+      });
+      tempList.innerHTML='';
+    }
+
+    state[milestoneId].comments.push(comment);
     if(window.blockvoicesSounds)window.blockvoicesSounds.note();
     inputEl.value="";
     render();
@@ -439,6 +525,92 @@ window.blockvoicesSounds.init();
     editActions.appendChild(cancelBtn);
     commentItemEl.insertBefore(editActions,input.nextSibling);
     input.focus();
+  }
+  function formatFileSize(bytes){
+    if(!bytes)return"0 B";
+    var k=1024,sizes=["B","KB","MB","GB"],i=Math.floor(Math.log(bytes)/Math.log(k));
+    return parseFloat((bytes/Math.pow(k,i)).toFixed(1))+' '+sizes[i];
+  }
+  function parseSizeText(text){
+    var parts=text.trim().split(' ');
+    if(parts.length<2)return 0;
+    var num=parseFloat(parts[0]),unit=parts[1],k=1024;
+    var unitMap={B:1,KB:k,MB:k*k,GB:k*k*k};
+    return Math.round(num*(unitMap[unit]||1));
+  }
+  function handleFileSelect(e,milestoneId,formEl){
+    var files=Array.from(e.target.files||[]);
+    var attachmentsList=formEl.querySelector('[data-milestone-id="'+milestoneId+'"][data-temp-attachments="true"]');
+    if(!attachmentsList)return;
+    files.forEach(function(file){
+      uploadFileAttachment(file,milestoneId,attachmentsList);
+    });
+    e.target.value='';
+  }
+  function uploadFileAttachment(file,milestoneId,attachmentsList){
+    var fileId=milestoneId+"_"+Date.now()+"_"+Math.random().toString(36).substr(2,9);
+    var itemDiv=el("div","attachment-item uploading");itemDiv.setAttribute("data-file-id",fileId);
+    var icon=el("div","attachment-icon");icon.textContent="📄";
+    var info=el("div","attachment-info");
+    var name=el("div","attachment-name");name.textContent=file.name;
+    var size=el("div","attachment-size");size.textContent="Uploading...";
+    info.appendChild(name);info.appendChild(size);
+    itemDiv.appendChild(icon);itemDiv.appendChild(info);
+    attachmentsList.appendChild(itemDiv);
+
+    if(!LIVE||!sb){
+      var dataUrl=window.URL.createObjectURL(file);
+      name.href=dataUrl;name.textContent=file.name;name.style.cursor='pointer';
+      size.textContent=formatFileSize(file.size);
+      itemDiv.classList.remove('uploading');
+      var delBtn=el("div","attachment-delete");delBtn.textContent="✕";
+      delBtn.addEventListener("click",function(){itemDiv.remove();});
+      itemDiv.appendChild(delBtn);
+      return;
+    }
+
+    var path=milestoneId+"/"+Date.now()+"_"+file.name.replace(/[^a-z0-9._-]/gi,'_');
+    sb.storage.from("tracker-attachments").upload(path,file,{upsert:false}).then(function(res){
+      if(res.error){
+        console.error("Upload error:",res.error);
+        size.textContent="Upload failed";
+        itemDiv.classList.add('error');
+        return;
+      }
+      var publicUrl=sb.storage.from("tracker-attachments").getPublicUrl(path).data.publicUrl;
+      name.href=publicUrl;
+      name.textContent=file.name;
+      name.style.cursor='pointer';
+      size.textContent=formatFileSize(file.size);
+      itemDiv.classList.remove('uploading');
+      var delBtn=el("div","attachment-delete");delBtn.textContent="✕";
+      delBtn.addEventListener("click",function(){itemDiv.remove();});
+      itemDiv.appendChild(delBtn);
+    }).catch(function(err){
+      console.error("Upload exception:",err);
+      size.textContent="Upload failed";
+      itemDiv.classList.add('error');
+    });
+  }
+  function deleteAttachment(milestoneId,commentIndex,attachmentIndex){
+    if(state[milestoneId].comments&&state[milestoneId].comments[commentIndex]&&state[milestoneId].comments[commentIndex].attachments){
+      var att=state[milestoneId].comments[commentIndex].attachments[attachmentIndex];
+      if(att&&att.url&&LIVE&&sb){
+        var pathMatch=att.url.match(/tracker-attachments[/%]([^?]+)/);
+        if(pathMatch){
+          var storagePath=decodeURIComponent(pathMatch[1]);
+          sb.storage.from("tracker-attachments").remove([storagePath]).then(function(){
+            state[milestoneId].comments[commentIndex].attachments.splice(attachmentIndex,1);
+            render();
+            persist(milestoneId);
+          }).catch(function(err){console.error("Delete error:",err);});
+        }
+      }else{
+        state[milestoneId].comments[commentIndex].attachments.splice(attachmentIndex,1);
+        render();
+        persist(milestoneId);
+      }
+    }
   }
   function startLive(){
     sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
