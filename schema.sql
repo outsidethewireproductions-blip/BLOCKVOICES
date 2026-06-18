@@ -4,6 +4,8 @@
 create table if not exists public.tracker (
   id          text primary key,
   status      text not null default 'todo',
+  tasks       text default '{}',
+  comments    text default '[]',
   note        text default '',
   updated_at  timestamptz not null default now()
 );

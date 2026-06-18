@@ -74,7 +74,7 @@
   .row::before{content:"";position:absolute;left:-41px;top:18px;width:16px;height:16px;border-radius:50%;
     background:#fff;border:4px solid var(--gold);box-shadow:0 0 0 4px #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
   .row[data-status="in-progress"]::before{border-color:#FFA500;background:#FFA500;content:""}
-  .row[data-status="complete"]::before{background:linear-gradient(135deg,#1abf7e,#0E9F6E,#0a7a54);border-color:#0E9F6E;content:"✓";color:#fff;font-size:12px}
+  .row[data-status="complete"]::before{background:#0E9F6E;border-color:#0E9F6E;content:"✓";color:#fff;font-size:12px}
   .row[data-status="blocked"]::before{border-color:var(--magenta);background:var(--magenta)}
 
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;transition:.2s}
@@ -450,7 +450,7 @@ window.blockvoicesSounds.init();
   }
   function persist(id){
     if(LIVE && sb){
-      sb.from("tracker").upsert({id:id,status:state[id].status,comments:JSON.stringify(state[id].comments),updated_at:new Date().toISOString()}).then(function(res){
+      sb.from("tracker").upsert({id:id,status:state[id].status,tasks:JSON.stringify(state[id].tasks),comments:JSON.stringify(state[id].comments),updated_at:new Date().toISOString()}).then(function(res){
         if(res.error){console.error(res.error);setLive(false,"Save error");}
       });
     } else { lsSave(); }
@@ -458,6 +458,10 @@ window.blockvoicesSounds.init();
   function applyRow(r){
     if(r&&state[r.id]){
       state[r.id].status=r.status||state[r.id].status;
+      if(r.tasks){
+        try{state[r.id].tasks=typeof r.tasks==="string"?JSON.parse(r.tasks):r.tasks;}
+        catch(e){}
+      }
       if(r.comments){
         try{state[r.id].comments=typeof r.comments==="string"?JSON.parse(r.comments):r.comments;}
         catch(e){state[r.id].comments=[];}
