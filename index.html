@@ -632,7 +632,7 @@ window.blockvoicesSounds.init();
     sb.from("tracker").select("*").then(function(res){
       if(res.error){setLive(false,"Connection error — using local");LIVE=false;lsLoad();render();recompute();return;}
       if(!res.data||res.data.length===0){
-        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,comments:"[]",updated_at:new Date().toISOString()};});
+        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,tasks:JSON.stringify(state[m.id].tasks),comments:"[]",updated_at:new Date().toISOString()};});
         sb.from("tracker").upsert(seed).then(function(){});
       } else { res.data.forEach(applyRow); }
       render();recompute();setLive(true,"Live — synced across everyone");
