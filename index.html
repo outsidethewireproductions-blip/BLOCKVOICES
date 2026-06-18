@@ -73,7 +73,7 @@
   .row{position:relative;margin:0 0 18px}
   .row::before{content:"";position:absolute;left:-41px;top:18px;width:16px;height:16px;border-radius:50%;
     background:#fff;border:4px solid var(--gold);box-shadow:0 0 0 4px #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
-  .row[data-status="in-progress"]::before{border-color:#FFA500;background:#FFA500;content:"●";color:#fff}
+  .row[data-status="in-progress"]::before{border-color:#FFA500;background:#FFA500;content:""}
   .row[data-status="complete"]::before{background:#0E9F6E;border-color:#0E9F6E;content:"✓";color:#fff;font-size:12px}
   .row[data-status="blocked"]::before{border-color:var(--magenta);background:var(--magenta)}
 
@@ -103,10 +103,33 @@
   .seg button[aria-pressed="true"][data-s="complete"]{background:var(--gold);color:#2a2305}
   .seg button[aria-pressed="true"][data-s="blocked"]{background:var(--magenta);color:#fff}
 
-  .notes{flex:1;min-width:180px;font-family:var(--mono);font-size:12.5px;color:var(--ink);
+  .comments-section{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
+  .comments-list{margin-bottom:14px}
+  .comment-item{background:#fffdf7;border:1px dashed var(--line);border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px;position:relative}
+  .comment-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+  .comment-timestamp{color:var(--muted);font-size:11px;font-weight:500}
+  .comment-text{color:var(--ink);word-break:break-word;line-height:1.4}
+  .comment-edit-mode .comment-text{display:none}
+  .comment-actions{display:flex;gap:6px;margin-top:8px;align-items:center}
+  .comment-btn{font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--line);
+    background:#fff;color:var(--ink);padding:5px 9px;border-radius:6px;transition:.12s;white-space:nowrap}
+  .comment-btn:hover{border-color:var(--gold-d);background:#fffdf3}
+  .comment-btn.delete:hover{border-color:var(--magenta);color:var(--magenta);background:#fff5f9}
+  .comment-edit-input{width:100%;font-family:var(--mono);font-size:12.5px;color:var(--ink);
+    border:1px solid var(--gold-d);border-radius:6px;padding:8px 10px;background:#fff;box-sizing:border-box;margin-bottom:8px}
+  .comment-edit-input:focus{outline:none;border-color:var(--gold-d);background:#fff}
+  .comment-edit-actions{display:flex;gap:6px}
+  .comment-edit-actions .comment-btn{padding:5px 9px}
+
+  .comment-form{display:flex;gap:8px;align-items:flex-start}
+  .comment-input{flex:1;min-width:160px;font-family:var(--mono);font-size:12.5px;color:var(--ink);
     border:1px dashed var(--line);border-radius:8px;padding:8px 10px;background:#fffdf7}
-  .notes::placeholder{color:#b3afa2}
-  .notes:focus{outline:none;border-color:var(--gold-d);border-style:solid;background:#fff}
+  .comment-input::placeholder{color:#b3afa2}
+  .comment-input:focus{outline:none;border-color:var(--gold-d);border-style:solid;background:#fff}
+  .comment-submit{font-family:var(--mono);font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--line);
+    background:#fff;color:var(--ink);padding:8px 13px;border-radius:8px;transition:.15s;white-space:nowrap}
+  .comment-submit:hover{border-color:var(--gold-d);background:#fffdf3}
+  .comment-submit:active{transform:scale(.98)}
 
   footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;font-family:var(--mono)}
   footer b{color:var(--ink)}
@@ -145,7 +168,7 @@
   button{transition:all .15s ease}
   button:active{transform:scale(0.98)}
   .ownpill{animation:fadeIn .3s ease-out}
-  .live-on .live-dot{animation:barGlow 2s infinite}
+  .live-on .live-dot{animation:barGlow 2s infinite;background:#15B8C4 !important}
 </style>
 
 </head>
@@ -254,7 +277,7 @@ window.blockvoicesSounds.init();
   ];
 
   var state={}, sb=null;
-  function defaults(){var d={};MILESTONES.forEach(function(m){var t={};if(m.tasks)m.tasks.forEach(function(tk,i){t[i]=m.id==="strategy";});d[m.id]={status:"todo",tasks:t,note:""};});d.strategy.status="complete";return d;}
+  function defaults(){var d={};MILESTONES.forEach(function(m){var t={};if(m.tasks)m.tasks.forEach(function(tk,i){t[i]=m.id==="strategy";});d[m.id]={status:"todo",tasks:t,comments:[]};});d.strategy.status="complete";return d;}
   function setLive(on,msg){var strip=document.getElementById("liveStrip");var txt=document.getElementById("liveTxt");if(on)strip.classList.add("live-on");else strip.classList.remove("live-on");txt.textContent=msg;}
   function lsLoad(){try{var r=localStorage.getItem("bv_tracker_v2");if(r){var o=JSON.parse(r);Object.keys(o).forEach(function(id){if(state[id])state[id]=o[id];});}}catch(e){}}
   function lsSave(){try{localStorage.setItem("bv_tracker_v2",JSON.stringify(state));}catch(e){}}
@@ -288,11 +311,53 @@ window.blockvoicesSounds.init();
         card.appendChild(cl);
       }
       
-      var note=el("input","notes");note.type="text";note.value=state[m.id].note||"";
-      note.placeholder="Add a note (owner, blockers, links)…";
-      note.style.marginTop="10px";
-      note.addEventListener("change",function(){if(note.value)window.blockvoicesSounds.note();state[m.id].note=note.value;persist(m.id);});
-      card.appendChild(note);
+      var commentsSection=el("div","comments-section");
+
+      var commentsList=el("div","comments-list");
+      if(state[m.id].comments&&state[m.id].comments.length>0){
+        state[m.id].comments.forEach(function(c,idx){
+          var commentItem=el("div","comment-item");
+          commentItem.setAttribute("data-comment-id",idx);
+
+          var header=el("div","comment-header");
+          var ts=el("div","comment-timestamp");
+          var dt=new Date(c.timestamp);
+          ts.textContent=dt.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+          header.appendChild(ts);
+
+          var actions=el("div");actions.setAttribute("class","comment-actions");
+          var editBtn=el("button","comment-btn");editBtn.textContent="Edit";
+          var delBtn=el("button","comment-btn delete");delBtn.textContent="Delete";
+          editBtn.addEventListener("click",function(){startEdit(m.id,idx,commentItem);});
+          delBtn.addEventListener("click",function(){deleteComment(m.id,idx);});
+          actions.appendChild(editBtn);
+          actions.appendChild(delBtn);
+          header.appendChild(actions);
+
+          commentItem.appendChild(header);
+
+          var text=el("div","comment-text");
+          text.textContent=c.text;
+          commentItem.appendChild(text);
+
+          commentsList.appendChild(commentItem);
+        });
+      }
+      commentsSection.appendChild(commentsList);
+
+      var form=el("div","comment-form");
+      var input=el("input","comment-input");input.type="text";
+      input.placeholder="Add a comment (owner, blockers, links)…";
+      input.setAttribute("data-milestone-id",m.id);
+
+      var submitBtn=el("button","comment-submit");submitBtn.type="button";submitBtn.textContent="Comment";
+      submitBtn.addEventListener("click",function(){addComment(m.id,input);});
+      input.addEventListener("keypress",function(e){if(e.key==="Enter"){addComment(m.id,input);}});
+
+      form.appendChild(input);
+      form.appendChild(submitBtn);
+      commentsSection.appendChild(form);
+      card.appendChild(commentsSection);
       
       row.appendChild(card);tl.appendChild(row);
     });
@@ -313,7 +378,7 @@ window.blockvoicesSounds.init();
   }
   function persist(id){
     if(LIVE && sb){
-      sb.from("tracker").upsert({id:id,status:state[id].status,note:state[id].note,updated_at:new Date().toISOString()}).then(function(res){
+      sb.from("tracker").upsert({id:id,status:state[id].status,comments:JSON.stringify(state[id].comments),updated_at:new Date().toISOString()}).then(function(res){
         if(res.error){console.error(res.error);setLive(false,"Save error");}
       });
     } else { lsSave(); }
@@ -321,15 +386,66 @@ window.blockvoicesSounds.init();
   function applyRow(r){
     if(r&&state[r.id]){
       state[r.id].status=r.status||state[r.id].status;
-      state[r.id].note=(r.note==null?state[r.id].note:r.note);
+      if(r.comments){
+        try{state[r.id].comments=typeof r.comments==="string"?JSON.parse(r.comments):r.comments;}
+        catch(e){state[r.id].comments=[];}
+      }
     }
+  }
+  function addComment(milestoneId,inputEl){
+    var text=inputEl.value.trim();
+    if(!text)return;
+    if(!state[milestoneId].comments)state[milestoneId].comments=[];
+    state[milestoneId].comments.push({text:text,timestamp:new Date().toISOString()});
+    if(window.blockvoicesSounds)window.blockvoicesSounds.note();
+    inputEl.value="";
+    render();
+    persist(milestoneId);
+  }
+  function deleteComment(milestoneId,commentIndex){
+    if(state[milestoneId].comments&&state[milestoneId].comments[commentIndex]){
+      state[milestoneId].comments.splice(commentIndex,1);
+      render();
+      persist(milestoneId);
+    }
+  }
+  function startEdit(milestoneId,commentIndex,commentItemEl){
+    commentItemEl.classList.add("comment-edit-mode");
+    var oldText=state[milestoneId].comments[commentIndex].text;
+    var textDiv=commentItemEl.querySelector(".comment-text");
+    var header=commentItemEl.querySelector(".comment-header");
+    var actionsDiv=header.querySelector(".comment-actions");
+    actionsDiv.style.display="none";
+
+    var input=el("textarea","comment-edit-input");
+    input.value=oldText;
+    commentItemEl.insertBefore(input,textDiv);
+
+    var editActions=el("div","comment-edit-actions");
+    var saveBtn=el("button","comment-btn");saveBtn.textContent="Save";
+    var cancelBtn=el("button","comment-btn");cancelBtn.textContent="Cancel";
+    saveBtn.addEventListener("click",function(){
+      var newText=input.value.trim();
+      if(newText){
+        state[milestoneId].comments[commentIndex].text=newText;
+        render();
+        persist(milestoneId);
+      }else{
+        render();
+      }
+    });
+    cancelBtn.addEventListener("click",function(){render();});
+    editActions.appendChild(saveBtn);
+    editActions.appendChild(cancelBtn);
+    commentItemEl.insertBefore(editActions,input.nextSibling);
+    input.focus();
   }
   function startLive(){
     sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     sb.from("tracker").select("*").then(function(res){
       if(res.error){setLive(false,"Connection error — using local");LIVE=false;lsLoad();render();recompute();return;}
       if(!res.data||res.data.length===0){
-        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,note:"",updated_at:new Date().toISOString()};});
+        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,comments:"[]",updated_at:new Date().toISOString()};});
         sb.from("tracker").upsert(seed).then(function(){});
       } else { res.data.forEach(applyRow); }
       render();recompute();setLive(true,"Live — synced across everyone");
