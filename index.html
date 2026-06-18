@@ -128,6 +128,26 @@
   .task-item input:checked + label{text-decoration:line-through;color:#999;font-weight:600}
 </style>
 
+
+<style>
+  /* Animations */
+  @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes checkmark{0%{transform:scale(0.8)}100%{transform:scale(1)}}
+  @keyframes barGlow{0%{box-shadow:0 0 0 0 rgba(233,191,55,.5)}50%{box-shadow:0 0 0 6px rgba(233,191,55,0)}100%{box-shadow:0 0 0 0 rgba(233,191,55,0)}}
+  
+  .row{animation:slideIn .4s ease-out}
+  .card{transition:all .25s ease}
+  .card:hover{box-shadow:0 6px 20px rgba(20,20,20,.08)}
+  .task-check{transition:all .2s cubic-bezier(.34,.88,.75,1.35)}
+  .task-check:checked{animation:checkmark .3s ease-out}
+  .bar > i{transition:width .4s cubic-bezier(.34,.88,.75,1.35)}
+  button{transition:all .15s ease}
+  button:active{transform:scale(0.98)}
+  .ownpill{animation:fadeIn .3s ease-out}
+  .live-on .live-dot{animation:barGlow 2s infinite}
+</style>
+
 </head>
 <body>
 
@@ -167,6 +187,37 @@
     <footer><b>Owners:</b> BlockVoices is the event; Outside The Wire Productions creates the products. Milestone dates are targets and may shift with deposit timing, speaker availability, and review turnaround. Recording must complete by June&nbsp;30; two revision rounds are included per video; final delivery lands at least two weeks before the August&nbsp;19–20 Summit.</footer>
   </div>
 
+
+<script>
+// Professional, subtle sound effects
+window.blockvoicesSounds={
+  init:function(){
+    this.audioContext=new(window.AudioContext||window.webkitAudioContext)();
+    this.masterGain=this.audioContext.createGain();
+    this.masterGain.gain.value=0.15;
+    this.masterGain.connect(this.audioContext.destination);
+  },
+  playTone:function(freq,duration,gain){
+    if(!this.audioContext)return;
+    var osc=this.audioContext.createOscillator();
+    var g=this.audioContext.createGain();
+    osc.frequency.value=freq;
+    osc.type="sine";
+    g.gain.setValueAtTime(gain||0.3,this.audioContext.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01,this.audioContext.currentTime+duration);
+    osc.connect(g);
+    g.connect(this.masterGain);
+    osc.start(this.audioContext.currentTime);
+    osc.stop(this.audioContext.currentTime+duration);
+  },
+  check:function(){this.playTone(523.25,.15,.25);this.playTone(659.25,.1,.15)},
+  complete:function(){this.playTone(784,.2,.3);this.playTone(987.77,.25,.35)},
+  status:function(){this.playTone(440,.12,.2)},
+  note:function(){this.playTone(523.25,.08,.15)}
+};
+window.blockvoicesSounds.init();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
@@ -185,11 +236,13 @@
     {id:"speaker",date:"Jun 16-22",title:"Speaker Packages (×9)",owner:"Outside The Wire",
       tasks:["Interview questions","Mission statement","Send to participants"]},
     {id:"recording",date:"By Jun 30",title:"Recording (Zoom)",owner:"Outside The Wire",
-      tasks:["Conduct interviews","Record voiceover","Record narration","Retakes if needed"]},
+      tasks:["Conduct 9 interviews","Record voiceover","Record narration","Retakes if needed"]},
+    {id:"speaker-contents",date:"By Jun 30",title:"Speaker Contents from Interview Voices",owner:"Outside The Wire",
+      tasks:["Receive speaker files","Organize by topic","Quality check","Archive"]},
     {id:"editing",date:"Jul 1-14",title:"Editing & Assembly",owner:"Outside The Wire",
       tasks:["Trim sessions","Assemble videos","Quality check"]},
     {id:"branding",date:"Jul 8-18",title:"Branding + B-Roll",owner:"Joint",
-      tasks:["Lower-thirds","Titles","Logo applied","Skylark B-roll integrated"]},
+      tasks:["Lower-thirds","Titles","Logo applied","8 AI B-roll videos integrated"]},
     {id:"social",date:"Jul 15-Aug",title:"Social Promo Flyers",owner:"Outside The Wire",
       tasks:["Story flyers","Post flyers","Series branding applied"]},
     {id:"review",date:"Jul 20-27",title:"Review & Revisions",owner:"Joint",
@@ -201,7 +254,7 @@
   ];
 
   var state={}, sb=null;
-  function defaults(){var d={};MILESTONES.forEach(function(m){var t={};if(m.tasks)m.tasks.forEach(function(tk,i){t[i]=m.id==="strategy";});d[m.id]={tasks:t,note:""};});return d;}
+  function defaults(){var d={};MILESTONES.forEach(function(m){var t={};if(m.tasks)m.tasks.forEach(function(tk,i){t[i]=m.id==="strategy";});d[m.id]={status:"todo",tasks:t,note:""};});d.strategy.status="complete";return d;}
   function setLive(on,msg){var strip=document.getElementById("liveStrip");var txt=document.getElementById("liveTxt");if(on)strip.classList.add("live-on");else strip.classList.remove("live-on");txt.textContent=msg;}
   function lsLoad(){try{var r=localStorage.getItem("bv_tracker_v2");if(r){var o=JSON.parse(r);Object.keys(o).forEach(function(id){if(state[id])state[id]=o[id];});}}catch(e){}}
   function lsSave(){try{localStorage.setItem("bv_tracker_v2",JSON.stringify(state));}catch(e){}}
@@ -217,13 +270,17 @@
       top.appendChild(el("span","ownpill "+(OWNERS[m.owner]||""),m.owner));
       card.appendChild(top);
       
+      var seg=el("div","seg");
+      ["To Do","In Progress","Done","Blocked"].forEach(function(label,idx){var statuses=["todo","in-progress","complete","blocked"];var s=statuses[idx];var b=el("button",null,label);b.setAttribute("data-s",s);b.setAttribute("aria-pressed",String((state[m.id].status||"todo")===s));b.addEventListener("click",function(){window.blockvoicesSounds.status();state[m.id].status=s;render();recompute();persist(m.id);});seg.appendChild(b);});
+      card.appendChild(seg);
+      
       if(m.tasks){
         var cl=el("div","task-checklist");
         m.tasks.forEach(function(tk,i){
           var item=el("div","task-item");
           var chk=el("input");chk.type="checkbox";chk.id="t_"+m.id+"_"+i;
           chk.checked=state[m.id].tasks[i]||false;
-          chk.addEventListener("change",function(){state[m.id].tasks[i]=chk.checked;render();recompute();persist(m.id);});
+          chk.addEventListener("change",function(){state[m.id].tasks[i]=chk.checked;window.blockvoicesSounds.check();render();recompute();persist(m.id);});
           var lab=el("label",null,tk);lab.setAttribute("for",chk.id);
           item.appendChild(chk);item.appendChild(lab);
           cl.appendChild(item);
@@ -234,7 +291,7 @@
       var note=el("input","notes");note.type="text";note.value=state[m.id].note||"";
       note.placeholder="Add a note (owner, blockers, links)…";
       note.style.marginTop="10px";
-      note.addEventListener("change",function(){state[m.id].note=note.value;persist(m.id);});
+      note.addEventListener("change",function(){if(note.value)window.blockvoicesSounds.note();state[m.id].note=note.value;persist(m.id);});
       card.appendChild(note);
       
       row.appendChild(card);tl.appendChild(row);
@@ -256,16 +313,14 @@
   }
   function persist(id){
     if(LIVE && sb){
-      var ts="";
-      if(state[id].tasks){Object.keys(state[id].tasks).forEach(function(i){if(state[id].tasks[i])ts+="1";else ts+="0";});}
-      sb.from("tracker").upsert({id:id,status:ts,note:state[id].note,updated_at:new Date().toISOString()}).then(function(res){
+      sb.from("tracker").upsert({id:id,status:state[id].status,note:state[id].note,updated_at:new Date().toISOString()}).then(function(res){
         if(res.error){console.error(res.error);setLive(false,"Save error");}
       });
     } else { lsSave(); }
   }
   function applyRow(r){
-    if(r&&state[r.id]&&r.status){
-      for(var i=0;i<r.status.length;i++){state[r.id].tasks[i]=(r.status[i]==="1");}
+    if(r&&state[r.id]){
+      state[r.id].status=r.status||state[r.id].status;
       state[r.id].note=(r.note==null?state[r.id].note:r.note);
     }
   }
@@ -274,7 +329,7 @@
     sb.from("tracker").select("*").then(function(res){
       if(res.error){setLive(false,"Connection error — using local");LIVE=false;lsLoad();render();recompute();return;}
       if(!res.data||res.data.length===0){
-        var seed=MILESTONES.map(function(m){var ts="";if(m.tasks)m.tasks.forEach(function(tk,i){ts+=(m.id==="strategy"?"1":"0");});return {id:m.id,status:ts,note:"",updated_at:new Date().toISOString()};});
+        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,note:"",updated_at:new Date().toISOString()};});
         sb.from("tracker").upsert(seed).then(function(){});
       } else { res.data.forEach(applyRow); }
       render();recompute();setLive(true,"Live — synced across everyone");
