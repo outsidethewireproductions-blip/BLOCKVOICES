@@ -292,8 +292,8 @@
             state[row.id].notes=notes;changed=true;
           }
           var tasks=Array.isArray(row.tasks)?row.tasks:[];
-          if(age>1000&&JSON.stringify(state[row.id].tasks||[])!==JSON.stringify(tasks)){
-            state[row.id].tasks=tasks;changed=true;
+          if(!lastChange[row.id]||Date.now()-lastChange[row.id]>2000){if(age>1000&&JSON.stringify(state[row.id].tasks||[])!==JSON.stringify(tasks)){
+            state[row.id].tasks=tasks;changed=true;}}
           }
         }
       });
