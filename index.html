@@ -276,8 +276,35 @@
   loadState();
   render();
   recompute();
+
+  // Push initial state to Supabase
   pushToSupabase();
-  setInterval(pullFromSupabase,1000);
+
+  // Sync from Supabase on initial load
+  pullFromSupabase();
+
+  // Real-time sync via Supabase WebSocket
+  supabase.channel('public:tracker').on('postgres_changes',{event:'*',schema:'public',table:'tracker'},function(payload){
+    console.log('Real-time update:',payload);
+    if(payload.new){
+      var row=payload.new;
+      if(state[row.id]){
+        var changed=false;
+        if(state[row.id].status!==row.status){state[row.id].status=row.status;changed=true;}
+        if(state[row.id].note!==row.note){state[row.id].note=row.note;changed=true;}
+        if(changed){
+          render();
+          recompute();
+          console.log('Live update rendered for '+row.id);
+        }
+      }
+    }
+  }).subscribe(function(status){
+    console.log('Realtime subscription status:',status);
+  });
+
+  // Fallback poll every 3 seconds for safety
+  setInterval(pullFromSupabase,3000);
 })();
   </script>
 </body>
