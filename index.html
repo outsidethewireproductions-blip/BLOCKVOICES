@@ -205,8 +205,8 @@
   function defaults(){
     var d={};
     MILESTONES.forEach(function(m){
-      var tasks={};
-      if(m.tasks){for(var i=0;i<m.tasks.length;i++)tasks[i]=false;}
+      var tasks=[];
+      if(m.tasks){for(var i=0;i<m.tasks.length;i++)tasks.push(false);}
       d[m.id]={status:m.def||"todo",notes:[],tasks:tasks};
     });
     return d;
@@ -225,7 +225,7 @@
             if(o[id]&&typeof o[id].status==="string")state[id].status=o[id].status;
             if(o[id]&&Array.isArray(o[id].notes))state[id].notes=o[id].notes;
             else if(o[id]&&typeof o[id].note==="string"&&o[id].note)state[id].notes=[o[id].note];
-            if(o[id]&&typeof o[id].tasks==="object")state[id].tasks=o[id].tasks;
+            if(o[id]&&Array.isArray(o[id].tasks))state[id].tasks=o[id].tasks;
           }
         });
       }catch(e){}
@@ -266,7 +266,7 @@
         id:mid,
         status:state[mid].status,
         note:JSON.stringify(state[mid].notes||[]),
-        tasks:state[mid].tasks||{},
+        tasks:state[mid].tasks||[],
         updated_at:new Date().toISOString()
       });
     });
@@ -296,8 +296,8 @@
           if(localNotes!==remoteNotesStr){
             state[row.id].notes=remoteNotes;changed=true;
           }
-          if(row.tasks){
-            var localTasksStr=JSON.stringify(state[row.id].tasks||{});
+          if(Array.isArray(row.tasks)){
+            var localTasksStr=JSON.stringify(state[row.id].tasks||[]);
             var remoteTasksStr=JSON.stringify(row.tasks);
             if(localTasksStr!==remoteTasksStr){
               state[row.id].tasks=row.tasks;changed=true;
@@ -404,7 +404,8 @@
 
         if(m.tasks&&m.tasks.length>0){
           var checkedCount=0;
-          for(var ti in state[m.id].tasks){if(state[m.id].tasks[ti])checkedCount++;}
+          var t=state[m.id].tasks||[];
+          for(var ti=0;ti<t.length;ti++){if(t[ti])checkedCount++;}
           var tasksBtn=el("button","tasks-toggle","▾ Tasks ("+checkedCount+"/"+m.tasks.length+")");
           tasksBtn.type="button";
           var tasksList=el("ul","tasks-list");
