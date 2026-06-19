@@ -68,9 +68,9 @@
   .timeline{position:relative;margin-left:7px;padding-left:30px;border-left:3px solid var(--gold)}
   .row{position:relative;margin:0 0 18px}
   .row::before{content:"";position:absolute;left:-41px;top:18px;width:16px;height:16px;border-radius:50%;
-    background:#fff;border:4px solid var(--gold);box-shadow:0 0 0 4px #fff;font-size:20px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold}
+    background:#fff;border:4px solid #9A968A;box-shadow:0 0 0 4px #fff;font-size:20px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold}
   .row[data-status="in-progress"]::before{border-color:#F4D83F;background:#F4D83F}
-  .row[data-status="complete"]::before{content:"✓";background:linear-gradient(135deg,#1abf7e,#0E9F6E,#0a7a54);border:none;box-shadow:0 0 0 4px #fff;font-size:12px}
+  .row[data-status="complete"]::before{content:"✓";background:linear-gradient(135deg,#1abf7e,#0E9F6E,#0a7a54);border:none;box-shadow:0 0 0 4px #fff;font-size:16px;line-height:16px}
   .row[data-status="blocked"]::before{content:"!";background:var(--block);border-color:var(--block);font-size:14px}
 
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;transition:.2s}
@@ -102,11 +102,24 @@
 
   .tasks-toggle{background:none;border:none;color:var(--teal);cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:600;padding:0;margin-top:10px}
   .tasks-toggle:hover{text-decoration:underline}
-  .tasks-list{list-style:none;margin:10px 0 0;padding:10px;background:#f9f8f5;border-radius:6px;border:1px solid var(--line);display:none}
+  .tasks-list{list-style:none;margin:10px 0 0;padding:10px;background:#f9f8f5;border-radius:6px;border:1px solid var(--line);display:block}
   .tasks-list.open{display:block}
   .tasks-list li{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px}
   .tasks-list input[type="checkbox"]{cursor:pointer;accent-color:#1abf7e}
   .tasks-list input[type="checkbox"]:checked{accent-color:#0a7a54}
+
+  .notes-section{margin-top:12px}
+  .notes-header{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+  .note-item{background:#fdf7e2;border:1px solid #eddca0;border-radius:6px;padding:8px;margin-bottom:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+  .note-text{flex:1;color:#33302a;word-break:break-word}
+  .note-actions{display:flex;gap:4px;margin-left:8px}
+  .note-btn{background:none;border:none;cursor:pointer;font-size:11px;color:var(--teal);font-weight:600;padding:2px 6px;border-radius:4px;transition:0.1s}
+  .note-btn:hover{background:rgba(21,184,196,0.1)}
+  .note-btn.delete{color:var(--block)}
+  .note-btn.delete:hover{background:rgba(230,57,70,0.1)}
+  .note-input-group{display:flex;gap:6px;margin-bottom:8px}
+  .note-input{font-family:var(--mono);font-size:12px;flex:1;border:1px solid #eddca0;border-radius:6px;padding:6px 8px;background:#fff}
+  .note-input:focus{outline:none;border-color:var(--gold-d);box-shadow:0 0 0 2px rgba(233,191,55,0.1)}
 
   footer{font-size:11px;color:var(--muted);margin:60px 0 0;padding:20px;border-top:1px solid var(--line);line-height:1.6}
 </style>
@@ -114,18 +127,14 @@
 <body>
   <div class="gradbar"></div>
   <div class="masthead">
-    <svg viewBox="0 0 800 60" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
-      <text x="50%" y="45" font-family="IBM Plex Mono, monospace" font-size="48" font-weight="700" fill="#E9BF37" text-anchor="middle" letter-spacing="2">BLOCKVOICES</text>
-    </svg>
+    <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgODAwIDYwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjx0ZXh0IHg9IjUwJSIgeT0iNDUiIGZvbnQtZmFtaWx5PSJJQk0gUGxleCBNb25vLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iNDgiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNFOUJGMzciIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIyIj5CTE9DS1ZPSUNFUzwvdGV4dD48L3N2Zz4=" alt="BlockVoices" style="max-width:100%;height:auto;display:block;margin:0 auto"/>
   </div>
-  <div class="band">
-    <div class="inner">
-      <h1>Project Tracker</h1>
-      <p class="sub">Nine speaker interviews filmed, edited, and delivered by August 5, 2026</p>
-    </div>
-  </div>
+  <div class="band"><div class="inner">
+    <h1>Project Timeline</h1>
+    <p class="sub">2026 BlockVoices Summit&nbsp; ·&nbsp; August 19–20, 2026&nbsp; ·&nbsp; Martha's Vineyard&nbsp; ·&nbsp; prepared June 13, 2026</p>
+  </div></div>
   <div class="wrap">
-    <p class="intro">This tracker shows the <b>actual project status</b> across eight delivery phases. Each phase is owned and updated by the responsible team. Milestone dates are <b>targets</b> and may shift with deposit timing, speaker availability, and review turnaround. Recording must complete by June 30; two revision rounds are included per video; final delivery lands at least two weeks before the August 19–20 Summit.</p>
+    <p class="intro">This tracker shows the <b>actual project status</b> across eight delivery phases. Each phase is owned and updated by the responsible team. Milestone dates are <b>targets</b> and may shift with deposit timing, speaker availability, and review turnaround. Recording must complete by June&nbsp;30; two revision rounds are included per video; final delivery lands at least two weeks before the August&nbsp;19–20 Summit.</p>
 
     <div class="summary">
       <div class="bigpct"><span id="pct">0</span>%</div>
@@ -151,7 +160,7 @@
 
     <div class="timeline" id="timeline"></div>
 
-    <footer><b>Owners:</b> BlockVoices is the event; Outside The Wire Productions creates the products. Milestone dates are targets and may shift with deposit timing, speaker availability, and review turnaround. Recording must complete by June 30; two revision rounds are included per video; final delivery lands at least two weeks before the August 19–20 Summit. Joint B-roll & backdrop items are provided, not billed; social promo flyers included at no extra cost.</footer>
+    <footer><b>Owners:</b> BlockVoices is the event; Outside The Wire Productions creates the products. Milestone dates are targets and may shift with deposit timing, speaker availability, and review turnaround. Recording must complete by June&nbsp;30; two revision rounds are included per video; final delivery lands at least two weeks before the August&nbsp;19–20 Summit.&nbsp; ·&nbsp; Joint B-roll &amp; backdrop items are provided, not billed; social promo flyers included at no extra cost.</footer>
   </div>
 
   <script>
@@ -182,7 +191,7 @@
     MILESTONES.forEach(function(m){
       var tasks={};
       if(m.tasks){for(var i=0;i<m.tasks.length;i++)tasks[i]=false;}
-      d[m.id]={status:m.def||"todo",note:"",tasks:tasks};
+      d[m.id]={status:m.def||"todo",notes:[],tasks:tasks};
     });
     return d;
   }
@@ -192,7 +201,19 @@
   function loadState(){
     state=defaults();
     var raw=gLS();
-    if(raw){try{var o=JSON.parse(raw);Object.keys(o).forEach(function(id){if(state[id]){if(o[id]&&typeof o[id].status==="string")state[id].status=o[id].status;if(o[id]&&typeof o[id].note==="string")state[id].note=o[id].note;}});}catch(e){}}
+    if(raw){
+      try{
+        var o=JSON.parse(raw);
+        Object.keys(o).forEach(function(id){
+          if(state[id]){
+            if(o[id]&&typeof o[id].status==="string")state[id].status=o[id].status;
+            if(o[id]&&Array.isArray(o[id].notes))state[id].notes=o[id].notes;
+            else if(o[id]&&typeof o[id].note==="string"&&o[id].note)state[id].notes=[o[id].note];
+            if(o[id]&&typeof o[id].tasks==="object")state[id].tasks=o[id].tasks;
+          }
+        });
+      }catch(e){}
+    }
   }
 
   function save(flash){
@@ -209,7 +230,7 @@
   function pushToSupabase(){
     var rows=[];
     Object.keys(state).forEach(function(mid){
-      rows.push({id:mid,status:state[mid].status,note:state[mid].note,updated_at:new Date().toISOString()});
+      rows.push({id:mid,status:state[mid].status,notes:state[mid].notes||[],updated_at:new Date().toISOString()});
     });
     supabase.from("tracker").upsert(rows).then(function(result){
       if(result.error)console.error("Push error:",result.error);
@@ -224,7 +245,10 @@
       data.forEach(function(row){
         if(state[row.id]){
           if(state[row.id].status!==row.status){state[row.id].status=row.status;changed=true;}
-          if(state[row.id].note!==row.note){state[row.id].note=row.note;changed=true;}
+          var remoteNotes=Array.isArray(row.notes)?row.notes:(row.note?[row.note]:[]);
+          var localNotes=JSON.stringify(state[row.id].notes||[]);
+          var remoteNotesStr=JSON.stringify(remoteNotes);
+          if(localNotes!==remoteNotesStr){state[row.id].notes=remoteNotes;changed=true;}
         }
       });
       if(changed){render();recompute();}
@@ -260,17 +284,49 @@
           seg.appendChild(b);
         });
         controls.appendChild(seg);
-        var existingNote=document.querySelector('input[data-mid="'+m.id+'"]');
-        var note=existingNote||el("input","notes");note.type="text";note.setAttribute("data-mid",m.id);
-        if(!note.value)note.value=state[m.id].note||"";
-        note.placeholder="Add a note (owner, blockers, links)…";
-        if(!existingNote){
-          note.addEventListener("input",function(){state[m.id].note=this.value;});
-          note.addEventListener("blur",function(){save(true);});
-          controls.appendChild(note);
-        }else{
-          if(note.value!==state[m.id].note)note.value=state[m.id].note||"";
-        }
+        var notesSection=el("div","notes-section");
+        notesSection.appendChild(el("div","notes-header","Notes"));
+        var notesList=el("div");
+        (state[m.id].notes||[]).forEach(function(note,idx){
+          var noteItem=el("div","note-item");
+          var noteText=el("span","note-text",note);
+          var actions=el("div","note-actions");
+          var editBtn=el("button","note-btn","Edit");
+          var delBtn=el("button","note-btn delete","Delete");
+          editBtn.addEventListener("click",function(){
+            var newText=prompt("Edit note:",note);
+            if(newText!==null){
+              soundClick();
+              state[m.id].notes[idx]=newText;
+              render();recompute();save(true);
+            }
+          });
+          delBtn.addEventListener("click",function(){
+            soundClick();
+            state[m.id].notes.splice(idx,1);
+            render();recompute();save(true);
+          });
+          actions.appendChild(editBtn);actions.appendChild(delBtn);
+          noteItem.appendChild(noteText);noteItem.appendChild(actions);
+          notesList.appendChild(noteItem);
+        });
+        notesSection.appendChild(notesList);
+
+        var inputGroup=el("div","note-input-group");
+        var noteInput=el("input","note-input");noteInput.type="text";noteInput.placeholder="Add a note…";noteInput.setAttribute("data-mid",m.id);
+        var addBtn=el("button","note-btn","Add");
+        addBtn.addEventListener("click",function(){
+          if(noteInput.value.trim()){
+            soundCheckmark();
+            state[m.id].notes.push(noteInput.value);
+            noteInput.value="";
+            render();recompute();save(true);
+          }
+        });
+        noteInput.addEventListener("keypress",function(e){if(e.key==="Enter")addBtn.click();});
+        inputGroup.appendChild(noteInput);inputGroup.appendChild(addBtn);
+        notesSection.appendChild(inputGroup);
+        card.appendChild(notesSection);
         card.appendChild(controls);
 
         if(m.tasks&&m.tasks.length>0){
@@ -315,22 +371,25 @@
   // Audio - professional luxury sounds
   var audioCtx=null;
   function getAudioContext(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
-  function playSound(freq,duration){
+  function playTone(freq,duration,volume){
     try{
       var ctx=getAudioContext();
       var osc=ctx.createOscillator();
       var gain=ctx.createGain();
-      osc.connect(gain);gain.connect(ctx.destination);
-      osc.frequency.value=freq;
-      osc.type="sine";
-      gain.gain.setValueAtTime(0.1,ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+duration);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime+duration);
+      var filter=ctx.createBiquadFilter();
+      filter.type="lowpass";filter.frequency.value=8000;
+      osc.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
+      osc.frequency.value=freq;osc.type="sine";
+      var startTime=ctx.currentTime;
+      gain.gain.setValueAtTime(0,startTime);
+      gain.gain.linearRampToValueAtTime(volume,startTime+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01,startTime+duration);
+      osc.start(startTime);
+      osc.stop(startTime+duration);
     }catch(e){}
   }
-  function soundCheckmark(){playSound(523,0.15);setTimeout(function(){playSound(659,0.15);},80);}
-  function soundClick(){playSound(880,0.1);}
+  function soundCheckmark(){playTone(369,0.12,0.04);setTimeout(function(){playTone(493,0.16,0.04);},90);}
+  function soundClick(){playTone(440,0.08,0.03);}
 
   loadState();
   render();
