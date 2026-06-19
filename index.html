@@ -289,6 +289,7 @@
     });
   }
 
+  var lastPullLog=0;
   function pullFromSupabase(){
     supabase.from("tracker").select("*").then(function(result){
       if(result.error){console.error("PULL ERROR:",result.error);return;}
@@ -316,15 +317,16 @@
             var localTasks=JSON.stringify(state[row.id].tasks||{});
             var remoteTasks=JSON.stringify(row.tasks);
             if(localTasks!==remoteTasks){
-              console.log("TASK PULL:",row.id,"local:",localTasks,"remote:",remoteTasks);
+              changes.push(row.id+": tasks "+localTasks+"→"+remoteTasks);
               state[row.id].tasks=row.tasks;changed=true;
             }
-          }else if(row.id){
-            console.log("NO TASKS on",row.id,"row.tasks=",row.tasks);
           }
         }
       });
-      if(changes.length>0)console.log("← PULL:",changes.join("; "));
+      if(changes.length>0){
+        console.log("← PULL:",changes.join(" | "));
+        lastPullLog=Date.now();
+      }
       if(changed){render();recompute();}
     });
   }
@@ -431,13 +433,14 @@
           tasksBtn.addEventListener("click",function(){tasksList.classList.toggle("open");});
           m.tasks.forEach(function(task,idx){
             var li=document.createElement("li");
-            var cb=document.createElement("input");cb.type="checkbox";cb.checked=state[m.id].tasks[idx]||false;
+            var isChecked=state[m.id].tasks[idx]||false;
+            var cb=document.createElement("input");cb.type="checkbox";cb.checked=isChecked;
             cb.addEventListener("change",function(){
-              console.log("TASK CHECK:",m.id,"idx",idx,"→",cb.checked);
+              console.log("TASK CHECK:",m.id,"task["+idx+"]:",isChecked,"→",cb.checked);
               soundClick();
               state[m.id].tasks[idx]=cb.checked;
               if(cb.checked)soundCheckmark();
-              console.log("TASK UPDATED:",m.id,"=",JSON.stringify(state[m.id].tasks));
+              console.log("TASK STATE SAVED:",m.id,"=",JSON.stringify(state[m.id].tasks));
               render();recompute();save(true);
             });
             var label=document.createElement("label");label.textContent=task;label.style.margin="0";
