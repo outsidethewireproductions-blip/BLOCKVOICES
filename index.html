@@ -287,18 +287,20 @@
       var taskUpdates=[];
       data.forEach(function(row){
         var timeSinceLocalUpdate=Date.now()-(lastLocalChange[row.id]||0);
-        if(state[row.id]&&timeSinceLocalUpdate>1500){
-          if(state[row.id].status!==row.status){
-            state[row.id].status=row.status;changed=true;
-          }
-          var remoteNotes=[];
-          try{
-            if(row.note&&typeof row.note==="string"){
-              remoteNotes=JSON.parse(row.note);
+        if(state[row.id]){
+          if(timeSinceLocalUpdate>1500){
+            if(state[row.id].status!==row.status){
+              state[row.id].status=row.status;changed=true;
             }
-          }catch(e){}
-          if(JSON.stringify(state[row.id].notes||[])!==JSON.stringify(remoteNotes)){
-            state[row.id].notes=remoteNotes;changed=true;
+            var remoteNotes=[];
+            try{
+              if(row.note&&typeof row.note==="string"){
+                remoteNotes=JSON.parse(row.note);
+              }
+            }catch(e){}
+            if(JSON.stringify(state[row.id].notes||[])!==JSON.stringify(remoteNotes)){
+              state[row.id].notes=remoteNotes;changed=true;
+            }
           }
           if(Array.isArray(row.tasks)){
             var localStr=JSON.stringify(state[row.id].tasks||[]);
