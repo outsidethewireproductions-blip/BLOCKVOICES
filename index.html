@@ -266,8 +266,6 @@
       rows.push({
         id:mid,
         status:state[mid].status,
-        note:JSON.stringify(state[mid].notes||[]),
-        tasks:Array.isArray(state[mid].tasks)?state[mid].tasks:[],
         updated_at:new Date().toISOString()
       });
     });
@@ -280,27 +278,9 @@
       var data=result.data||[];
       var changed=false;
       data.forEach(function(row){
-        var timeSinceLocalUpdate=Date.now()-(lastLocalChange[row.id]||0);
         if(state[row.id]){
-          var remoteTasks=Array.isArray(row.tasks)?row.tasks:[];
-          var localTasks=state[row.id].tasks||[];
-          var tasksMatch=JSON.stringify(localTasks)===JSON.stringify(remoteTasks);
-          if(!tasksMatch){
-            state[row.id].tasks=remoteTasks;changed=true;
-          }
-          if(timeSinceLocalUpdate>2000){
-            if(state[row.id].status!==row.status){
-              state[row.id].status=row.status;changed=true;
-            }
-            var remoteNotes=[];
-            try{
-              if(row.note&&typeof row.note==="string"){
-                remoteNotes=JSON.parse(row.note);
-              }
-            }catch(e){}
-            if(JSON.stringify(state[row.id].notes||[])!==JSON.stringify(remoteNotes)){
-              state[row.id].notes=remoteNotes;changed=true;
-            }
+          if(state[row.id].status!==row.status){
+            state[row.id].status=row.status;changed=true;
           }
         }
       });
