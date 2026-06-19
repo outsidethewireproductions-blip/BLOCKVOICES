@@ -75,7 +75,11 @@
     color:var(--muted);padding:7px 12px;border-right:1px solid var(--line);transition:.12s;white-space:nowrap}
   .seg button:last-child{border-right:0}
   .seg button:hover{background:#faf8f0}
-  .seg button[aria-pressed="true"]{background:var(--gold);color:var(--black);font-weight:700}
+  .seg button[aria-pressed="true"]{color:#fff;font-weight:700}
+  .seg button:nth-child(1)[aria-pressed="true"]{background:var(--todo)}
+  .seg button:nth-child(2)[aria-pressed="true"]{background:var(--prog)}
+  .seg button:nth-child(3)[aria-pressed="true"]{background:var(--done);color:var(--black)}
+  .seg button:nth-child(4)[aria-pressed="true"]{background:var(--block)}
 
   .task-checklist{margin:10px 0 0;padding:8px 0 0;border-top:1px solid var(--line)}
   .task-item{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:13px}
