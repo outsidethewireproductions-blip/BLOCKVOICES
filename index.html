@@ -268,7 +268,7 @@
         tasks:state[mid].tasks||[]
       });
     });
-    supabase.from("tracker").upsert(rows).catch(function(e){});
+    supabase.from("tracker").upsert(rows);
   }
 
   function pullFromSupabase(){
