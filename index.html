@@ -266,6 +266,8 @@
       rows.push({
         id:mid,
         status:state[mid].status,
+        note:JSON.stringify(state[mid].notes||[]),
+        tasks:state[mid].tasks||[],
         updated_at:new Date().toISOString()
       });
     });
@@ -281,6 +283,19 @@
         if(state[row.id]){
           if(state[row.id].status!==row.status){
             state[row.id].status=row.status;changed=true;
+          }
+          var remoteNotes=[];
+          try{
+            if(row.note&&typeof row.note==="string"){
+              remoteNotes=JSON.parse(row.note);
+            }
+          }catch(e){}
+          if(JSON.stringify(state[row.id].notes||[])!==JSON.stringify(remoteNotes)){
+            state[row.id].notes=remoteNotes;changed=true;
+          }
+          var remoteTasks=Array.isArray(row.tasks)?row.tasks:[];
+          if(JSON.stringify(state[row.id].tasks||[])!==JSON.stringify(remoteTasks)){
+            state[row.id].tasks=remoteTasks;changed=true;
           }
         }
       });
