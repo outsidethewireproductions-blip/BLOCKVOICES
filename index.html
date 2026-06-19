@@ -235,35 +235,46 @@
   function pushToSupabase(){
     var rows=[];
     Object.keys(state).forEach(function(mid){
-      rows.push({id:mid,status:state[mid].status,notes:state[mid].notes||[],updated_at:new Date().toISOString()});
+      rows.push({
+        id:mid,
+        status:state[mid].status,
+        note:JSON.stringify(state[mid].notes||[]),
+        tasks:state[mid].tasks||{},
+        updated_at:new Date().toISOString()
+      });
     });
-    console.log("PUSH:",rows.length,"rows to Supabase",JSON.stringify(rows));
+    console.log("PUSH:",rows.length,"rows",rows[0]);
     supabase.from("tracker").upsert(rows).then(function(result){
-      console.log("PUSH RESPONSE:",result);
       if(result.error){
-        console.error("PUSH ERROR - CODE:",result.error.code,"MSG:",result.error.message,"DETAILS:",result.error.details);
+        console.error("PUSH ERROR:",result.error);
       }else{
-        console.log("PUSH SUCCESS");
+        console.log("PUSH OK");
       }
     }).catch(function(err){
-      console.error("PUSH EXCEPTION:",err.toString(),err);
+      console.error("PUSH FAIL:",err);
     });
   }
 
   function pullFromSupabase(){
     var timeSinceLastChange=Date.now()-lastLocalChange;
     if(timeSinceLastChange<3000){
-      console.log("SKIP PULL - local change too recent",timeSinceLastChange,"ms ago");
       return;
     }
     supabase.from("tracker").select("*").then(function(result){
-      if(result.error){console.error("Pull error:",result.error);return;}
+      if(result.error){return;}
       var data=result.data||[];
       var changed=false;
       data.forEach(function(row){
         if(state[row.id]){
           if(state[row.id].status!==row.status){state[row.id].status=row.status;changed=true;}
-          var remoteNotes=Array.isArray(row.notes)?row.notes:(row.note?[row.note]:[]);
+          var remoteNotes=[];
+          try{
+            if(row.note&&typeof row.note==="string"){
+              remoteNotes=JSON.parse(row.note);
+            }else if(Array.isArray(row.notes)){
+              remoteNotes=row.notes;
+            }
+          }catch(e){}
           var localNotes=JSON.stringify(state[row.id].notes||[]);
           var remoteNotesStr=JSON.stringify(remoteNotes);
           if(localNotes!==remoteNotesStr){state[row.id].notes=remoteNotes;changed=true;}
