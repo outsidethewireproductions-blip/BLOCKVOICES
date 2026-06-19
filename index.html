@@ -273,6 +273,7 @@
         var seg=el("div","seg");
         STATUSES.forEach(function(opt){
           var b=el("button",opt.s,opt.label);
+          b.type="button";
           b.setAttribute("aria-pressed",String(st===opt.s));
           b.addEventListener("click",function(){
             soundClick();
@@ -317,6 +318,7 @@
         var inputGroup=el("div","note-input-group");
         var noteInput=el("input","note-input");noteInput.type="text";noteInput.placeholder="Add a note…";noteInput.setAttribute("data-mid",m.id);
         var addBtn=el("button","note-btn","Add");
+        addBtn.type="button";
         addBtn.addEventListener("click",function(){
           if(noteInput.value.trim()){
             soundCheckmark();
@@ -333,6 +335,7 @@
           var checkedCount=0;
           for(var ti in state[m.id].tasks){if(state[m.id].tasks[ti])checkedCount++;}
           var tasksBtn=el("button","tasks-toggle","▾ Tasks ("+checkedCount+"/"+m.tasks.length+")");
+          tasksBtn.type="button";
           var tasksList=el("ul","tasks-list");
           tasksBtn.addEventListener("click",function(){tasksList.classList.toggle("open");});
           m.tasks.forEach(function(task,idx){
