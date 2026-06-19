@@ -14,7 +14,7 @@
     --muted:#6E6A5E; --gold:#E9BF37; --gold-d:#C99E12;
     --joint:#DAD8D0; --skylark:#A6C4F5; --skylark-tx:#1b294f;
     --teal:#15B8C4; --magenta:#C42FB2; --violet:#7B53E6; --cyan:#19C8E0;
-    --todo:#9A968A; --prog:#15B8C4; --done:var(--gold); --block:#E63946;
+    --todo:#9A968A; --prog:#FFD700; --done:#22C55E; --block:#E63946;
     --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
     --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     color-scheme: light;
@@ -47,11 +47,11 @@
   .bigpct{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1;color:var(--ink)}
   .bigpct small{font-size:12px;font-weight:500;color:var(--muted);margin-left:8px;letter-spacing:.02em}
   .bar{flex:1;min-width:200px;height:12px;border-radius:99px;background:#EFECE2;overflow:hidden;border:1px solid var(--line)}
-  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta));transition:width .35s ease}
+  .bar > i{display:block;height:100%;width:0;background:var(--done);transition:width .35s ease}
   .counts{display:flex;gap:7px;flex-wrap:wrap}
   .pillcount{font-family:var(--mono);font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:#fff;letter-spacing:.02em}
   .pillcount b{font-weight:700}
-  .pillcount.done{color:var(--gold-d)} .pillcount.prog{color:#0b8b95} .pillcount.todo{color:var(--muted)} .pillcount.block{color:var(--block)}
+  .pillcount.done{color:var(--done)} .pillcount.prog{color:var(--prog)} .pillcount.todo{color:var(--muted)} .pillcount.block{color:var(--block)}
 
   .saved{font-size:12px;color:var(--muted);align-self:center;font-family:var(--mono)}
   .saved b{color:var(--gold-d)}
@@ -95,8 +95,8 @@
   .seg button:hover{background:#fffdf3;color:var(--ink);z-index:10}
   .seg button[aria-pressed="true"]{background:var(--gold);color:#2a2305;font-weight:700;z-index:10}
   .seg button[aria-pressed="true"].todo{background:var(--todo);color:#fff;z-index:10}
-  .seg button[aria-pressed="true"].in-progress{background:var(--prog);color:#fff;z-index:10}
-  .seg button[aria-pressed="true"].complete{background:var(--done);color:#2a2305;z-index:10}
+  .seg button[aria-pressed="true"].in-progress{background:var(--prog);color:#000;font-weight:700;z-index:10}
+  .seg button[aria-pressed="true"].complete{background:var(--done);color:#fff;font-weight:700;z-index:10}
   .seg button[aria-pressed="true"].blocked{background:var(--block);color:#fff;z-index:10}
   .seg-btn{font-family:var(--mono);font-size:11.5px;font-weight:600;cursor:pointer;border:0;background:transparent;color:var(--muted);padding:7px 12px;border-right:1px solid var(--line);transition:.12s;white-space:nowrap;z-index:5}
   .notes{font-family:var(--mono);font-size:12px;flex:1;min-width:120px;border:1px solid var(--line);border-radius:6px;
@@ -264,20 +264,25 @@
   function pushToSupabase(){
     var rows=[];
     Object.keys(state).forEach(function(mid){
+      var tasks=state[mid].tasks||{};
       rows.push({
         id:mid,
         status:state[mid].status,
         note:JSON.stringify(state[mid].notes||[]),
-        tasks:state[mid].tasks||{},
+        tasks:tasks,
         updated_at:new Date().toISOString()
       });
     });
-    console.log("PUSH:",rows.length,"rows →",rows.map(function(r){return r.id+":"+r.status;}).join(", "));
+    var summary=rows.map(function(r){
+      var taskStr=Object.keys(r.tasks).length>0?"tasks:"+JSON.stringify(r.tasks):"";
+      return r.id+":"+r.status+(taskStr?","+taskStr:"");
+    }).join(" | ");
+    console.log("PUSH:",summary);
     supabase.from("tracker").upsert(rows).then(function(result){
       if(result.error){
         console.error("PUSH ERROR:",result.error.message||result.error);
       }else{
-        console.log("✓ PUSH SUCCESS");
+        console.log("✓ PUSH OK");
       }
     }).catch(function(err){
       console.error("PUSH FAIL:",err.message||err);
@@ -310,7 +315,12 @@
           if(row.tasks&&typeof row.tasks==="object"){
             var localTasks=JSON.stringify(state[row.id].tasks||{});
             var remoteTasks=JSON.stringify(row.tasks);
-            if(localTasks!==remoteTasks){state[row.id].tasks=row.tasks;changed=true;}
+            if(localTasks!==remoteTasks){
+              console.log("TASK PULL:",row.id,"local:",localTasks,"remote:",remoteTasks);
+              state[row.id].tasks=row.tasks;changed=true;
+            }
+          }else if(row.id){
+            console.log("NO TASKS on",row.id,"row.tasks=",row.tasks);
           }
         }
       });
@@ -423,11 +433,11 @@
             var li=document.createElement("li");
             var cb=document.createElement("input");cb.type="checkbox";cb.checked=state[m.id].tasks[idx]||false;
             cb.addEventListener("change",function(){
-              console.log("TASK CHANGE:",m.id,"task",idx,"checked=",cb.checked);
+              console.log("TASK CHECK:",m.id,"idx",idx,"→",cb.checked);
               soundClick();
               state[m.id].tasks[idx]=cb.checked;
               if(cb.checked)soundCheckmark();
-              console.log("TASK STATE:",m.id,JSON.stringify(state[m.id].tasks));
+              console.log("TASK UPDATED:",m.id,"=",JSON.stringify(state[m.id].tasks));
               render();recompute();save(true);
             });
             var label=document.createElement("label");label.textContent=task;label.style.margin="0";
