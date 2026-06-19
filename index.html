@@ -2,302 +2,281 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BlockVoices Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BlockVoices — Live Project Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--black:#000;--ink:#16140e;--paper:#FFF;--line:#E6E2D6;--muted:#6E6A5E;--gold:#E9BF37;--gold-d:#C99E12;--joint:#DAD8D0;--teal:#15B8C4;--magenta:#C42FB2;--violet:#7B53E6;--cyan:#19C8E0;--mono:"IBM Plex Mono",monospace;--sans:"IBM Plex Sans",sans-serif}
-*{box-sizing:border-box}
-html,body{margin:0;padding:0}
-body{background:var(--paper);color:var(--ink);font-family:var(--mono);font-size:14px;line-height:1.5}
-.grad{height:4px;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta))}
-.head{background:var(--black);padding:40px 20px;text-align:center}
-.head h1{margin:0;color:#fff;font-size:48px;font-weight:700;letter-spacing:4px}
-.band{background:var(--gold);padding:20px;text-align:center}
-.band h2{margin:0;color:var(--black);font-size:24px;font-weight:700}
-.wrap{max-width:1040px;margin:0 auto;padding:40px 20px}
-.summary{display:flex;gap:20px;align-items:center;margin-bottom:30px}
-.pct{font-size:48px;font-weight:700;color:var(--ink)}
-.bar{flex:1;height:12px;background:#EFECE2;border:1px solid var(--line);border-radius:99px;overflow:hidden}
-.bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta));transition:width .3s}
-.live{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f0f0f0;border-radius:6px;font-size:12px;font-weight:600;margin-left:auto}
-.live.on{background:#e0f7f6}
-.dot{width:8px;height:8px;border-radius:50%;background:#ccc}
-.live.on .dot{background:var(--teal)}
-.timeline{position:relative;margin:0 0 0 30px;padding:0 0 0 20px;border-left:3px solid var(--gold)}
-.row{position:relative;margin:0 0 20px;padding:0}
-.row:before{content:"";position:absolute;left:-42px;top:16px;width:16px;height:16px;border-radius:50%;background:#fff;border:4px solid var(--gold);box-shadow:0 0 0 4px #fff}
-.row[data-s="in-progress"]:before{border-color:#FFA500;background:#FFA500}
-.row[data-s="complete"]:before{background:#0E9F6E;border-color:#0E9F6E;content:"✓";color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
-.row[data-s="blocked"]:before{border-color:var(--magenta);background:var(--magenta)}
-.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px}
-.row[data-s="in-progress"] .card{background:#effbfc;border-color:#bce8ec}
-.row[data-s="complete"] .card{background:#fdf7e2;border-color:#eddca0}
-.row[data-s="blocked"] .card{background:#fbeaf6;border-color:#efc6e6}
-.card-h{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-.card-h .date{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--ink)}
-.card-h .title{font-size:16px;font-weight:700;text-transform:uppercase;flex:1;margin:0;letter-spacing:1px}
-.row[data-s="complete"] .title{text-decoration:line-through;text-decoration-color:var(--gold-d)}
-.owner{font-size:10px;font-weight:700;text-transform:uppercase;padding:4px 10px;border-radius:99px;white-space:nowrap}
-.o-otw{background:var(--gold);color:#2a2305}
-.o-joint{background:var(--joint);color:#3a382f}
-.o-bv{background:linear-gradient(120deg,var(--cyan),var(--violet),var(--magenta));color:#fff}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;margin:10px 0}
-.seg button{border:0;background:transparent;color:var(--muted);padding:7px 12px;border-right:1px solid var(--line);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:600;transition:.1s}
-.seg button:last-child{border-right:0}
-.seg button:hover{background:#faf8f0}
-.seg button[aria-pressed="true"]{background:var(--gold);color:var(--black);font-weight:700}
-.tasks{margin:10px 0 0;padding:8px 0 0;border-top:1px solid var(--line)}
-.task{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:13px}
-.task input{width:16px;height:16px;cursor:pointer;accent-color:var(--gold)}
-.task label{cursor:pointer;flex:1;color:#3c392f}
-.comments{margin:15px 0 0;padding:12px 0 0;border-top:1px solid var(--line)}
-.comments-list{margin-bottom:10px;max-height:200px;overflow-y:auto}
-.comment{background:#faf9f5;border-radius:6px;padding:8px;margin:8px 0;font-size:12px}
-.comment-time{font-size:11px;color:var(--muted);margin-bottom:4px}
-.comment-text{color:var(--ink)}
-.comment-form{display:flex;gap:6px;margin:8px 0}
-.comment-input{flex:1;padding:6px 8px;border:1px solid var(--line);border-radius:4px;font-family:var(--mono);font-size:12px}
-.btn{padding:6px 12px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:600;border-radius:4px;transition:.1s}
-.btn:hover{border-color:var(--gold-d);background:#fffdf3}
+  :root{
+    --black:#000; --ink:#16140e; --paper:#FFFFFF; --line:#E6E2D6;
+    --muted:#6E6A5E; --gold:#E9BF37; --gold-d:#C99E12;
+    --joint:#DAD8D0; --skylark:#A6C4F5; --skylark-tx:#1b294f;
+    --teal:#15B8C4; --magenta:#C42FB2; --violet:#7B53E6; --cyan:#19C8E0;
+    --todo:#9A968A; --prog:#15B8C4; --done:var(--gold); --block:#C42FB2;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--mono);line-height:1.5;font-size:14px;-webkit-font-smoothing:antialiased}
+  .gradbar{height:4px;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta))}
+
+  .masthead{background:var(--black);text-align:center;padding:30px 20px 26px;
+    background-image:radial-gradient(60% 80% at 12% 0%,rgba(233,191,55,.10),transparent 60%),
+      radial-gradient(50% 70% at 90% 100%,rgba(123,83,230,.16),transparent 60%),
+      radial-gradient(40% 60% at 0% 70%,rgba(21,200,196,.10),transparent 60%)}
+  .masthead img{width:100%;max-width:740px;display:block;margin:0 auto}
+
+  .band{background:var(--gold);padding:22px 0}
+  .band .inner{max-width:1040px;margin:0 auto;padding:0 22px}
+  .band h1{font-family:var(--mono);font-weight:700;text-transform:uppercase;letter-spacing:.02em;
+    color:var(--black);margin:0 0 8px;font-size:clamp(24px,4.6vw,38px);line-height:1}
+  .band .sub{font-family:var(--mono);font-weight:500;color:#2a2305;margin:0;font-size:clamp(12px,2.2vw,15px)}
+
+  .wrap{max-width:1040px;margin:0 auto;padding:26px 22px 90px}
+  .intro{font-size:13.5px;color:#33302a;margin:0 0 22px;max-width:80ch}
+  .intro b{color:var(--ink)}
+
+  .summary{display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px;margin:0 0 8px}
+  .bigpct{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1;color:var(--ink)}
+  .bigpct small{font-size:12px;font-weight:500;color:var(--muted);margin-left:8px;letter-spacing:.02em}
+  .bar{flex:1;min-width:200px;height:12px;border-radius:99px;background:#EFECE2;overflow:hidden;border:1px solid var(--line)}
+  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta));transition:width .35s ease}
+  .counts{display:flex;gap:7px;flex-wrap:wrap}
+  .pillcount{font-family:var(--mono);font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:#fff;letter-spacing:.02em}
+  .pillcount b{font-weight:700}
+  .pillcount.done{color:var(--gold-d)} .pillcount.prog{color:#0b8b95} .pillcount.todo{color:var(--muted)} .pillcount.block{color:var(--magenta)}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+  .saved{font-size:12px;color:var(--muted);align-self:center;margin-left:auto;font-family:var(--mono)}
+  .saved b{color:var(--gold-d)}
+
+  .legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:18px 0 24px;font-family:var(--mono);font-size:12px}
+  .legend .lab{font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink)}
+  .legdot{display:inline-flex;align-items:center;gap:7px;color:#3a3730}
+  .legdot i{width:12px;height:12px;border-radius:50%;display:inline-block}
+  .d-otw{background:var(--gold)} .d-joint{background:#BFBCB0}
+  .d-skylark{background:var(--skylark)} .d-bv{background:linear-gradient(135deg,var(--cyan),var(--violet),var(--magenta))}
+
+  .timeline{position:relative;margin-left:7px;padding-left:30px;border-left:3px solid var(--gold)}
+  .row{position:relative;margin:0 0 18px}
+  .row::before{content:"";position:absolute;left:-41px;top:18px;width:16px;height:16px;border-radius:50%;
+    background:#fff;border:4px solid var(--gold);box-shadow:0 0 0 4px #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+  .row[data-status="in-progress"]::before{border-color:#FFA500;background:#FFA500;content:""}
+  .row[data-status="complete"]::before{background:#0E9F6E;border-color:#0E9F6E;content:"✓";color:#fff;font-size:12px}
+  .row[data-status="blocked"]::before{border-color:var(--magenta);background:var(--magenta)}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;transition:.2s}
+  .row[data-status="in-progress"] .card{background:#effbfc;border-color:#bce8ec}
+  .row[data-status="complete"] .card{background:#fdf7e2;border-color:#eddca0}
+  .row[data-status="blocked"] .card{background:#fbeaf6;border-color:#efc6e6}
+
+  .card-top{display:flex;flex-wrap:wrap;align-items:center;gap:7px 12px}
+  .date{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+  .title{font-family:var(--mono);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.01em;margin:0;flex:1;min-width:150px;color:var(--ink)}
+  .row[data-status="complete"] .title{text-decoration:line-through;text-decoration-color:var(--gold-d);text-decoration-thickness:2px}
+  .ownpill{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:99px;white-space:nowrap}
+  .o-otw{background:var(--gold);color:#2a2305} .o-joint{background:var(--joint);color:#3a382f}
+  .o-skylark{background:var(--skylark);color:var(--skylark-tx)}
+  .o-bv{background:linear-gradient(120deg,var(--cyan),var(--violet),var(--magenta));color:#fff}
+
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:13px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+  .seg button{font-family:var(--mono);font-size:11.5px;font-weight:600;cursor:pointer;border:0;background:transparent;
+    color:var(--muted);padding:7px 12px;border-right:1px solid var(--line);transition:.12s;white-space:nowrap}
+  .seg button:last-child{border-right:0}
+  .seg button:hover{background:#faf8f0}
+  .seg button[aria-pressed="true"]{background:var(--gold);color:var(--black);font-weight:700}
+
+  .task-checklist{margin:10px 0 0;padding:8px 0 0;border-top:1px solid var(--line)}
+  .task-item{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:13px}
+  .task-item input[type="checkbox"]{cursor:pointer;width:16px;height:16px;accent-color:var(--gold)}
+  .task-item label{cursor:pointer;flex:1;color:#3c392f}
+
+  .live-strip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:6px;background:#f0f0f0;font-size:11px;font-weight:600}
+  .live-strip.live-on{background:#e0f7f6}
+  .live-dot{width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block}
+  .live-on .live-dot{background:#15B8C4}
 </style>
 </head>
 <body>
 
-<div class="grad"></div>
-<div class="head"><h1>BLOCKVOICES</h1></div>
-<div class="band"><h2>Project Tracker — Live Status</h2></div>
+<div class="gradbar"></div>
+
+<div class="masthead">
+  <svg width="400" height="80" viewBox="0 0 400 80" xmlns="http://www.w3.org/2000/svg">
+    <text x="200" y="50" font-family="IBM Plex Mono" font-size="42" font-weight="700" text-anchor="middle" fill="white" letter-spacing="2">BLOCKVOICES</text>
+  </svg>
+</div>
+
+<div class="band">
+  <div class="inner">
+    <h1>Project Tracker</h1>
+    <p class="sub">Live status across team + client</p>
+  </div>
+</div>
 
 <div class="wrap">
-<div class="summary">
-<div class="pct"><span id="pct">0</span>%</div>
-<div class="bar"><i id="bar"></i></div>
-<div class="live on" id="live"><span class="dot"></span><span>Live Sync</span></div>
-</div>
-<div class="timeline" id="tl"></div>
+  <p class="intro">Team and client see <b>all updates instantly</b>. Change a status, everyone's page refreshes within seconds.</p>
+
+  <div class="summary">
+    <div class="bigpct"><span id="pct">0</span>%<small>done</small></div>
+    <div class="bar"><i id="barfill" style="width:0%"></i></div>
+    <div class="counts">
+      <div class="pillcount done"><b id="cDone">0</b> done</div>
+      <div class="pillcount todo"><b id="cTodo">0</b> to do</div>
+    </div>
+    <div class="live-strip live-on" id="liveStrip">
+      <span class="live-dot"></span>
+      <span id="liveTxt">Live — synced</span>
+    </div>
+  </div>
+
+  <div id="timeline" class="timeline"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-var SURL = "https://exjliabrkcjhwscyjgmu.supabase.co";
-var SKEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4amxpYWJya2NqaHdzY3lqZ211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTAzOTEsImV4cCI6MjA5NzM4NjM5MX0.tt0vx8486B7Foktev4c9ndaVrAzF5510nrvw49VIMgg";
+(function(){
+  var SUPABASE_URL = "https://exjliabrkcjhwscyjgmu.supabase.co";
+  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4amxpYWJya2NqaHdzY3lqZ211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTAzOTEsImV4cCI6MjA5NzM4NjM5MX0.tt0vx8486B7Foktev4c9ndaVrAzF5510nrvw49VIMgg";
 
-var MILESTONES = [
-{id:"strategy",t:"Strategy & Creative Direction",d:"Jan 15",o:"Joint",tasks:[]},
-{id:"kickoff",t:"Kickoff & Deposit",d:"Jan 20",o:"Joint",tasks:["Deposit received","Scope locked","Recording logistics"]},
-{id:"sp1",t:"Speaker 1 Package",d:"Jan 25",o:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
-{id:"sp2",t:"Speaker 2 Package",d:"Jan 25",o:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
-{id:"sp3",t:"Speaker 3 Package",d:"Jan 25",o:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
-{id:"sp4",t:"Speaker 4 Package",d:"Jan 25",o:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
-{id:"sp5",t:"Speaker 5 Package",d:"Jan 25",o:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
-{id:"sp6",t:"Speaker 6 Package",d:"Jan 25",o:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
-{id:"sp7",t:"Speaker 7 Package",d:"Jan 25",o:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
-{id:"sp8",t:"Speaker 8 Package",d:"Jan 25",o:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
-{id:"sp9",t:"Speaker 9 Package",d:"Jan 25",o:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
-{id:"rec",t:"Recording (Zoom)",d:"Feb 5",o:"Outside The Wire",tasks:["Conduct 9 interviews","Record voiceover","Record narration","Retakes if needed"]},
-{id:"content",t:"Speaker Content from Interviews",d:"Feb 12",o:"Outside The Wire",tasks:["Receive speaker files","Organize by topic","Quality check","Archive"]},
-{id:"edit",t:"Editing & Assembly",d:"Feb 28",o:"Outside The Wire",tasks:["Trim sessions","Assemble videos","Quality check"]},
-{id:"brand",t:"Branding + B-Roll",d:"Mar 10",o:"Joint",tasks:["Lower-thirds","Titles","Logo applied","8 AI B-roll videos"]},
-{id:"social",t:"Social Promo Flyers",d:"Mar 15",o:"Outside The Wire",tasks:["Story flyers","Post flyers","Series branding"]},
-{id:"review",t:"Review & Revisions",d:"Mar 20",o:"Joint",tasks:["Round 1 feedback","Round 2 feedback","Notes incorporated"]},
-{id:"delivery",t:"Final Delivery",d:"Mar 28",o:"Outside The Wire",tasks:["Export videos","Deliver flyers","Invoice balance"]},
-{id:"summit",t:"BlockVoices Summit",d:"Apr 15",o:"BlockVoices",event:true}
-];
+  var MILESTONES=[
+    {id:"strategy",title:"Strategy & Creative Direction",date:"Jan 15",owner:"Joint",tasks:[]},
+    {id:"kickoff",title:"Kickoff & Deposit",date:"Jan 20",owner:"Joint",tasks:["Deposit received","Scope locked","Recording logistics confirmed"]},
+    {id:"sp1",title:"Speaker 1 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"sp2",title:"Speaker 2 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"sp3",title:"Speaker 3 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"sp4",title:"Speaker 4 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"sp5",title:"Speaker 5 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"sp6",title:"Speaker 6 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"sp7",title:"Speaker 7 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"sp8",title:"Speaker 8 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"sp9",title:"Speaker 9 Package",date:"Jan 25",owner:"Outside The Wire",tasks:["Interview questions","Mission statement","Send to participants"]},
+    {id:"recording",title:"Recording (Zoom)",date:"Feb 5",owner:"Outside The Wire",tasks:["Conduct 9 interviews","Record voiceover","Record narration","Retakes if needed"]},
+    {id:"speaker_content",title:"Speaker Content from Interviews",date:"Feb 12",owner:"Outside The Wire",tasks:["Receive speaker files","Organize by topic","Quality check","Archive"]},
+    {id:"editing",title:"Editing & Assembly",date:"Feb 28",owner:"Outside The Wire",tasks:["Trim sessions","Assemble videos","Quality check"]},
+    {id:"branding",title:"Branding + B-Roll",date:"Mar 10",owner:"Joint",tasks:["Lower-thirds","Titles","Logo applied","8 AI B-roll videos"]},
+    {id:"social",title:"Social Promo Flyers",date:"Mar 15",owner:"Outside The Wire",tasks:["Story flyers","Post flyers","Series branding applied"]},
+    {id:"review",title:"Review & Revisions",date:"Mar 20",owner:"Joint",tasks:["Round 1 feedback","Round 2 feedback","Notes incorporated"]},
+    {id:"delivery",title:"Final Delivery",date:"Mar 28",owner:"Outside The Wire",tasks:["Export videos","Deliver flyers","Invoice balance"]},
+    {id:"summit",title:"BlockVoices Summit",date:"Apr 15",owner:"BlockVoices",event:true}
+  ];
 
-var OWNERS = {"Outside The Wire":"o-otw","Joint":"o-joint","BlockVoices":"o-bv"};
-var state = {};
-var sb = null;
-var lastSync = 0;
+  var OWNERS={"Outside The Wire":"o-otw","Joint":"o-joint","BlockVoices":"o-bv"};
+  var state={},sb=null;
 
-function initState() {
-  var s = {};
-  MILESTONES.forEach(function(m) {
-    s[m.id] = {st:"todo", co:[], tk:{}};
-  });
-  s.strategy.st = "complete";
-  return s;
-}
+  function defaults(){var d={};MILESTONES.forEach(function(m){var t={};if(m.tasks)m.tasks.forEach(function(tk,i){t[i]=false;});d[m.id]={status:"todo",tasks:t};});d.strategy.status="complete";return d;}
 
-function saveDB(id) {
-  if (!sb || !state[id]) return;
-  sb.from("tracker").upsert({
-    id: id,
-    status: state[id].st,
-    comments: JSON.stringify(state[id].co),
-    updated_at: new Date().toISOString()
-  }).catch(function(e) {
-    console.error("Save error:", e);
-  });
-}
+  function getCompletionStatus(milestoneId){
+    var m=MILESTONES.find(function(mm){return mm.id===milestoneId;});
+    if(!m||!m.tasks)return "todo";
+    var total=m.tasks.length;
+    var checked=0;
+    m.tasks.forEach(function(tk,i){if(state[milestoneId].tasks[i])checked++;});
+    if(checked===total)return "complete";
+    if(checked>0)return "in-progress";
+    return "todo";
+  }
 
-function syncDB() {
-  if (!sb) return;
-  if (Date.now() - lastSync < 1000) return;
-  lastSync = Date.now();
+  function render(){
+    var tl=document.getElementById("timeline");tl.innerHTML="";
+    MILESTONES.forEach(function(m){
+      var row=document.createElement("div");
+      row.className="row";
+      row.setAttribute("data-status",state[m.id].status);
+      var card=document.createElement("div");
+      card.className="card";
+      var top=document.createElement("div");
+      top.className="card-top";
+      top.appendChild(document.createTextNode(m.date));
+      var title=document.createElement("h2");
+      title.className="title";
+      title.textContent=m.title;
+      if(m.event){var em=document.createElement("span");em.style.cssText="font-size:10px;font-weight:600;color:var(--muted)";em.textContent="(event)";title.appendChild(document.createTextNode(" "));title.appendChild(em);}
+      top.appendChild(title);
+      var owner=document.createElement("span");
+      owner.className="ownpill "+(OWNERS[m.owner]||"");
+      owner.textContent=m.owner;
+      top.appendChild(owner);
+      card.appendChild(top);
 
-  sb.from("tracker").select("*").then(function(res) {
-    if (res.error || !res.data) return;
+      var seg=document.createElement("div");
+      seg.className="seg";
+      ["To Do","In Progress","Done","Blocked"].forEach(function(label,idx){var statuses=["todo","in-progress","complete","blocked"];var s=statuses[idx];var b=document.createElement("button");b.textContent=label;b.setAttribute("aria-pressed",String(state[m.id].status===s));b.addEventListener("click",function(){state[m.id].status=s;persist(m.id);render();recompute();});seg.appendChild(b);});
+      card.appendChild(seg);
 
-    res.data.forEach(function(row) {
-      if (!state[row.id]) return;
-      state[row.id].st = row.status || state[row.id].st;
-
-      if (row.comments) {
-        try {
-          state[row.id].co = JSON.parse(row.comments);
-        } catch(e) {
-          state[row.id].co = [];
-        }
+      if(m.tasks){
+        var cl=document.createElement("div");
+        cl.className="task-checklist";
+        m.tasks.forEach(function(tk,i){
+          var item=document.createElement("div");
+          item.className="task-item";
+          var chk=document.createElement("input");chk.type="checkbox";chk.id="t_"+m.id+"_"+i;
+          chk.checked=state[m.id].tasks[i]||false;
+          chk.addEventListener("change",function(){state[m.id].tasks[i]=chk.checked;persist(m.id);render();recompute();});
+          var lab=document.createElement("label");lab.setAttribute("for",chk.id);lab.textContent=tk;
+          item.appendChild(chk);item.appendChild(lab);
+          cl.appendChild(item);
+        });
+        card.appendChild(cl);
       }
+
+      row.appendChild(card);tl.appendChild(row);
     });
+  }
 
-    render();
-    compute();
-  }).catch(function(e) {
-    console.error("Sync error:", e);
-  });
-}
-
-function render() {
-  var tl = document.getElementById("tl");
-  tl.innerHTML = "";
-
-  MILESTONES.forEach(function(m) {
-    var row = document.createElement("div");
-    row.className = "row";
-    row.setAttribute("data-s", state[m.id].st);
-
-    var card = document.createElement("div");
-    card.className = "card";
-
-    var h = document.createElement("div");
-    h.className = "card-h";
-    h.innerHTML = '<span class="date">' + m.d + '</span><h3 class="title">' + m.t + '</h3><span class="owner ' + (OWNERS[m.o] || '') + '">' + m.o + '</span>';
-    card.appendChild(h);
-
-    var seg = document.createElement("div");
-    seg.className = "seg";
-    var statuses = ["todo", "in-progress", "complete", "blocked"];
-    var labels = ["To Do", "In Progress", "Done", "Blocked"];
-
-    labels.forEach(function(label, i) {
-      var btn = document.createElement("button");
-      btn.textContent = label;
-      btn.setAttribute("aria-pressed", String(state[m.id].st === statuses[i]));
-      btn.onclick = (function(s) {
-        return function() {
-          state[m.id].st = s;
-          saveDB(m.id);
-          setTimeout(syncDB, 100);
-          render();
-          compute();
-        };
-      })(statuses[i]);
-      seg.appendChild(btn);
+  function recompute(){
+    var deliv=MILESTONES.filter(function(m){return !m.event;});var total=deliv.length;
+    var done=0,todo=0;
+    deliv.forEach(function(m){
+      if(state[m.id].status==="complete")done++;
     });
-    card.appendChild(seg);
+    todo=total-done;
+    var pct=total?Math.round(done/total*100):0;
+    document.getElementById("pct").textContent=pct;
+    document.getElementById("cDone").textContent=done;document.getElementById("cTodo").textContent=todo;
+    document.getElementById("barfill").style.width=pct+"%";
+  }
 
-    if (m.tasks && m.tasks.length) {
-      var tkdiv = document.createElement("div");
-      tkdiv.className = "tasks";
-      m.tasks.forEach(function(tk, i) {
-        var item = document.createElement("div");
-        item.className = "task";
-
-        var chk = document.createElement("input");
-        chk.type = "checkbox";
-        chk.id = "t" + m.id + i;
-        chk.checked = state[m.id].tk[i] || false;
-        chk.onchange = (function(idx) {
-          return function() {
-            state[m.id].tk[idx] = chk.checked;
-            saveDB(m.id);
-            render();
-            compute();
-          };
-        })(i);
-
-        var lab = document.createElement("label");
-        lab.setAttribute("for", chk.id);
-        lab.textContent = tk;
-
-        item.appendChild(chk);
-        item.appendChild(lab);
-        tkdiv.appendChild(item);
-      });
-      card.appendChild(tkdiv);
-    }
-
-    var cs = document.createElement("div");
-    cs.className = "comments";
-
-    var cl = document.createElement("div");
-    cl.className = "comments-list";
-
-    if (state[m.id].co && state[m.id].co.length) {
-      state[m.id].co.forEach(function(c) {
-        var ci = document.createElement("div");
-        ci.className = "comment";
-        var dt = new Date(c.ts);
-        ci.innerHTML = '<div class="comment-time">' + dt.toLocaleString("en-US", {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"}) + '</div><div class="comment-text">' + c.t + '</div>';
-        cl.appendChild(ci);
+  function persist(id){
+    if(sb){
+      sb.from("tracker").upsert({id:id,status:state[id].status,updated_at:new Date().toISOString()}).then(function(res){
+        if(res.error){console.error(res.error);}
       });
     }
-    cs.appendChild(cl);
+  }
 
-    var cf = document.createElement("div");
-    cf.className = "comment-form";
+  function applyRow(r){
+    if(r&&state[r.id]){
+      state[r.id].status=r.status||state[r.id].status;
+    }
+  }
 
-    var inp = document.createElement("input");
-    inp.className = "comment-input";
-    inp.type = "text";
-    inp.placeholder = "Add note...";
+  function startLive(){
+    sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    sb.from("tracker").select("*").then(function(res){
+      if(res.error){return;}
+      if(!res.data||res.data.length===0){
+        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,updated_at:new Date().toISOString()};});
+        sb.from("tracker").upsert(seed).then(function(){});
+      } else { res.data.forEach(applyRow); }
+      render();recompute();
+      setInterval(function(){
+        sb.from("tracker").select("*").then(function(res){
+          if(res.data){res.data.forEach(applyRow);}
+          render();recompute();
+        }).catch(function(){});
+      },3000);
+    });
+  }
 
-    var btn = document.createElement("button");
-    btn.className = "btn";
-    btn.textContent = "Add";
-    btn.onclick = (function(mileId) {
-      return function() {
-        var txt = inp.value.trim();
-        if (!txt) return;
-        state[mileId].co.push({t:txt, ts:new Date().toISOString()});
-        inp.value = "";
-        saveDB(mileId);
-        render();
-      };
-    })(m.id);
-
-    inp.onkeypress = function(e) {
-      if (e.key === "Enter") btn.click();
-    };
-
-    cf.appendChild(inp);
-    cf.appendChild(btn);
-    cs.appendChild(cf);
-
-    card.appendChild(cs);
-    row.appendChild(card);
-    tl.appendChild(row);
-  });
-}
-
-function compute() {
-  var total = MILESTONES.filter(function(m) { return !m.event; }).length;
-  var done = MILESTONES.filter(function(m) { return !m.event && state[m.id].st === "complete"; }).length;
-  var pct = total ? Math.round(done / total * 100) : 0;
-
-  document.getElementById("pct").textContent = pct;
-  document.getElementById("bar").style.width = pct + "%";
-}
-
-state = initState();
-render();
-compute();
-
-sb = supabase.createClient(SURL, SKEY);
-setInterval(syncDB, 3000);
-
+  state=defaults();
+  render();recompute();
+  startLive();
+})();
 </script>
+
 </body>
 </html>
