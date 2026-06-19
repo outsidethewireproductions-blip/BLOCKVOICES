@@ -232,7 +232,6 @@
     }
   }
 
-  var lastLocalChange={};
   var currentUserName="";
 
   function initUserName(){
@@ -250,9 +249,6 @@
 
   function save(flash){
     var ok=sLS(JSON.stringify(state));
-    Object.keys(state).forEach(function(mid){
-      lastLocalChange[mid]=Date.now();
-    });
     if(flash){
       var n=document.getElementById("savedNote");
       n.innerHTML="✓ <b>Syncing…</b>";
@@ -265,32 +261,24 @@
   function pushToSupabase(){
     var rows=[];
     Object.keys(state).forEach(function(mid){
-      var noteStr=JSON.stringify(state[mid].notes||[]);
       rows.push({
         id:mid,
         status:state[mid].status,
-        note:noteStr,
+        note:JSON.stringify(state[mid].notes||[]),
         tasks:state[mid].tasks||[],
         updated_at:new Date().toISOString()
       });
     });
-    console.log("PUSH notes:",rows.map(function(r){return r.id+": "+r.note;}).join(" | "));
-    supabase.from("tracker").upsert(rows).then(function(r){
-      if(r.error)console.error("PUSH FAILED:",r.error);
-      else console.log("PUSH SUCCESS");
-    }).catch(function(e){console.error("PUSH ERROR:",e);});
+    supabase.from("tracker").upsert(rows).catch(function(e){});
   }
 
   function pullFromSupabase(){
     supabase.from("tracker").select("*").then(function(result){
-      if(result.error){console.error("PULL ERROR:",result.error);return;}
+      if(result.error){return;}
       var data=result.data||[];
       var changed=false;
-      console.log("PULL received:",data.map(function(r){return r.id+": note="+(r.note?r.note.substring(0,50):"empty");}).join(" | "));
       data.forEach(function(row){
-        var timeSinceLocalUpdate=Date.now()-(lastLocalChange[row.id]||0);
-        var skipThisMilestone=timeSinceLocalUpdate<2500;
-        if(state[row.id]&&!skipThisMilestone){
+        if(state[row.id]){
           if(state[row.id].status!==row.status){
             state[row.id].status=row.status;changed=true;
           }
@@ -298,31 +286,19 @@
           try{
             if(row.note&&typeof row.note==="string"){
               remoteNotes=JSON.parse(row.note);
-            }else if(Array.isArray(row.notes)){
-              remoteNotes=row.notes;
             }
-          }catch(e){console.error("NOTE PARSE ERROR:",e);}
-          var localNotes=JSON.stringify(state[row.id].notes||[]);
-          var remoteNotesStr=JSON.stringify(remoteNotes);
-          if(localNotes!==remoteNotesStr){
-            console.log("NOTE SYNC:",row.id,"local:",localNotes,"remote:",remoteNotesStr);
+          }catch(e){}
+          if(JSON.stringify(state[row.id].notes||[])!==JSON.stringify(remoteNotes)){
             state[row.id].notes=remoteNotes;changed=true;
           }
           if(Array.isArray(row.tasks)){
-            var localTasksStr=JSON.stringify(state[row.id].tasks||[]);
-            var remoteTasksStr=JSON.stringify(row.tasks);
-            if(localTasksStr!==remoteTasksStr){
+            if(JSON.stringify(state[row.id].tasks||[])!==JSON.stringify(row.tasks)){
               state[row.id].tasks=row.tasks;changed=true;
             }
           }
-        }else if(skipThisMilestone){
-          console.log("SKIP PULL for",row.id,"(changed",Math.round(timeSinceLocalUpdate),"ms ago)");
         }
       });
-      if(changed){
-        console.log("PULL changed, rendering");
-        render();recompute();
-      }
+      if(changed){render();recompute();}
     });
   }
 
@@ -409,7 +385,6 @@
           if(noteInput.value.trim()){
             soundCheckmark();
             state[m.id].notes.push({text:noteInput.value,owner:currentUserName||"Anonymous",ts:new Date().toISOString()});
-            console.log("NOTE ADDED to",m.id,":",JSON.stringify(state[m.id].notes));
             noteInput.value="";
             render();recompute();save(true);
           }
