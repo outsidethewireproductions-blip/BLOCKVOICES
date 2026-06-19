@@ -60,6 +60,8 @@
   .btn.ghost{color:var(--muted)}
   .saved{font-size:12px;color:var(--muted);align-self:center;margin-left:auto;font-family:var(--mono)}
   .saved b{color:var(--gold-d)}
+  .live-sync{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:#e0f7f6;border-radius:6px;font-size:11px;font-weight:600;color:var(--teal);margin-left:auto}
+  .live-sync::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--teal)}
 
   /* LEGEND */
   .legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:18px 0 24px;font-family:var(--mono);font-size:12px}
@@ -74,8 +76,8 @@
   .row{position:relative;margin:0 0 18px}
   .row::before{content:"";position:absolute;left:-41px;top:18px;width:16px;height:16px;border-radius:50%;
     background:#fff;border:4px solid var(--gold);box-shadow:0 0 0 4px #fff}
-  .row[data-status="in-progress"]::before{border-color:var(--teal)}
-  .row[data-status="complete"]::before{background:var(--gold);border-color:var(--gold)}
+  .row[data-completion="in-progress"]::before{border-color:#FFA500;background:#FFA500}
+  .row[data-completion="complete"]::before{background:linear-gradient(135deg,#1abf7e,#0E9F6E,#0a7a54);border-color:#0E9F6E;content:"✓";color:#fff;font-size:12px}
   .row[data-status="blocked"]::before{border-color:var(--magenta);background:var(--magenta)}
 
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;transition:.2s}
@@ -142,6 +144,7 @@
         <span class="pillcount todo"><b id="cTodo">0</b> To&nbsp;do</span>
         <span class="pillcount block"><b id="cBlock">0</b> Blocked</span>
       </div>
+      <span class="live-sync">Live — synced</span>
     </div>
 
     <div class="toolbar">
@@ -197,11 +200,21 @@
   }
   function save(flash){var ok=sLS(JSON.stringify(state));var n=document.getElementById("savedNote");if(flash){n.innerHTML=ok?"✓ <b>Saved</b> in this browser":"⚠ Couldn't save (storage blocked) — use Export";clearTimeout(save._t);save._t=setTimeout(function(){n.textContent="";},2200);}}
   function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;}
+  function getCompletion(m){
+    if(!m.tasks||!m.tasks.length)return "todo";
+    var total=m.tasks.length;
+    var checked=0;
+    Object.keys(state[m.id].tasks).forEach(function(i){if(state[m.id].tasks[i])checked++;});
+    if(checked===total)return "complete";
+    if(checked>0)return "in-progress";
+    return "todo";
+  }
   function render(){
     var tl=document.getElementById("timeline");tl.innerHTML="";
     MILESTONES.forEach(function(m){
       var st=state[m.id].status;
-      var row=el("div","row");row.setAttribute("data-status",st);
+      var comp=getCompletion(m);
+      var row=el("div","row");row.setAttribute("data-status",st);row.setAttribute("data-completion",comp);
       var card=el("div","card");
       var top=el("div","card-top");
       top.appendChild(el("span","date",m.date));
