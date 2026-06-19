@@ -74,8 +74,8 @@
   .row[data-status="blocked"]::before{content:"!";background:var(--block);border-color:var(--block);font-size:14px}
 
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;transition:.2s}
-  .row[data-status="in-progress"] .card{background:#effbfc;border-color:#bce8ec}
-  .row[data-status="complete"] .card{background:#fdf7e2;border-color:#eddca0}
+  .row[data-status="in-progress"] .card{background:rgba(255,215,0,0.15);border-color:#FFD700}
+  .row[data-status="complete"] .card{background:rgba(34,197,94,0.15);border-color:#22C55E}
   .row[data-status="blocked"] .card{background:#fbeaf6;border-color:#efc6e6}
 
   .card-top{display:flex;flex-wrap:wrap;align-items:center;gap:7px 12px}
@@ -95,7 +95,7 @@
   .seg button:hover{background:#fffdf3;color:var(--ink);z-index:10}
   .seg button[aria-pressed="true"]{background:var(--gold);color:#2a2305;font-weight:700;z-index:10}
   .seg button[aria-pressed="true"].todo{background:var(--todo);color:#fff;z-index:10}
-  .seg button[aria-pressed="true"].in-progress{background:var(--prog);color:#000;font-weight:700;z-index:10}
+  .seg button[aria-pressed="true"].in-progress{background:var(--prog);color:#fff;font-weight:700;z-index:10}
   .seg button[aria-pressed="true"].complete{background:var(--done);color:#fff;font-weight:700;z-index:10}
   .seg button[aria-pressed="true"].blocked{background:var(--block);color:#fff;z-index:10}
   .seg-btn{font-family:var(--mono);font-size:11.5px;font-weight:600;cursor:pointer;border:0;background:transparent;color:var(--muted);padding:7px 12px;border-right:1px solid var(--line);transition:.12s;white-space:nowrap;z-index:5}
