@@ -53,12 +53,8 @@
   .pillcount b{font-weight:700}
   .pillcount.done{color:var(--gold-d)} .pillcount.prog{color:#0b8b95} .pillcount.todo{color:var(--muted)} .pillcount.block{color:var(--block)}
 
-  .sync-indicator{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--teal);letter-spacing:.02em;text-transform:uppercase}
-  .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-  /* TOOLBAR */
-  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+  .saved{font-size:12px;color:var(--muted);align-self:center;font-family:var(--mono)}
+  .saved b{color:var(--gold-d)}
 
   /* LEGEND */
   .legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:18px 0 24px;font-family:var(--mono);font-size:12px}
@@ -74,7 +70,7 @@
   .row::before{content:"";position:absolute;left:-41px;top:18px;width:16px;height:16px;border-radius:50%;
     background:#fff;border:4px solid var(--gold);box-shadow:0 0 0 4px #fff}
   .row[data-status="in-progress"]::before{border-color:var(--teal)}
-  .row[data-status="complete"]::before{background:var(--gold);border-color:var(--gold)}
+  .row[data-status="complete"]::before{background:linear-gradient(135deg,#1abf7e,#0E9F6E,#0a7a54);border-color:#0a7a54}
   .row[data-status="blocked"]::before{border-color:var(--block);background:var(--block)}
 
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;transition:.2s}
@@ -124,7 +120,7 @@
     <p class="intro">This tracker shows the <b>actual project status</b> across eight delivery phases. Each phase is owned and updated by the responsible team. Milestone dates are <b>targets</b> and may shift with deposit timing, speaker availability, and review turnaround. Recording must complete by June 30; two revision rounds are included per video; final delivery lands at least two weeks before the August 19–20 Summit.</p>
 
     <div class="summary">
-      <div class="bigpct"><span id="pct">0</span>%<small>COMPLETE</small></div>
+      <div class="bigpct"><span id="pct">0</span>%</div>
       <div class="bar"><i id="barfill"></i></div>
       <div class="counts">
         <div class="pillcount done"><b id="cDone">0</b> Done</div>
@@ -132,14 +128,10 @@
         <div class="pillcount todo"><b id="cTodo">0</b> To Do</div>
         <div class="pillcount block"><b id="cBlock">0</b> Blocked</div>
       </div>
-      <div class="sync-indicator">
-        <span class="sync-dot"></span>
-        Live — synced
-      </div>
     </div>
 
-    <div class="toolbar">
-      <span id="savedNote" style="font-size:12px;color:var(--muted)"></span>
+    <div style="display:flex;gap:10px;margin:16px 0;align-items:center">
+      <span id="savedNote" class="saved"></span>
     </div>
 
     <div class="legend">
@@ -157,11 +149,11 @@
   <script>
 (function(){
   "use strict";
+  var STORAGE_KEY="otw_blockvoices_tracker_v1";
   var SUPABASE_URL="https://exjliabrkcjhwscyjgmu.supabase.co";
   var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4amxpYWJya2NqaHdzY3lqZ211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTAzOTEsImV4cCI6MjA5NzM4NjM5MX0.tt0vx8486B7Foktev4c9ndaVrAzF5510nrvw49VIMgg";
   var supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-  var STORAGE_KEY="otw_blockvoices_tracker_v1";
   var OWNERS={"Outside The Wire":"o-otw","BlockVoices":"o-bv","Joint":"o-joint"};
   var MILESTONES=[
     {id:"kickoff",date:"Jun 16",title:"Kickoff & Deposit",owner:"Joint",desc:"Deposit received authorizes the start. Scope, speaker list, topics, and recording logistics locked with BlockVoices; project timeline (this document) shared.",def:"todo"},
@@ -187,13 +179,40 @@
     if(raw){try{var o=JSON.parse(raw);Object.keys(o).forEach(function(id){if(state[id]){if(o[id]&&typeof o[id].status==="string")state[id].status=o[id].status;if(o[id]&&typeof o[id].note==="string")state[id].note=o[id].note;}});}catch(e){}}
   }
 
-  function save(){
+  function save(flash){
     sLS(JSON.stringify(state));
-    var n=document.getElementById("savedNote");
-    n.innerHTML="✓ <b>Syncing</b>";
-    clearTimeout(save._t);
-    save._t=setTimeout(function(){n.textContent="";},2200);
+    if(flash){
+      var n=document.getElementById("savedNote");
+      n.innerHTML="✓ <b>Syncing…</b>";
+      clearTimeout(save._t);
+      save._t=setTimeout(function(){n.textContent="";},2200);
+    }
     pushToSupabase();
+  }
+
+  function pushToSupabase(){
+    var rows=[];
+    Object.keys(state).forEach(function(mid){
+      rows.push({id:mid,status:state[mid].status,note:state[mid].note,updated_at:new Date().toISOString()});
+    });
+    supabase.from("tracker").upsert(rows).then(function(result){
+      if(result.error)console.error("Push error:",result.error);
+    });
+  }
+
+  function pullFromSupabase(){
+    supabase.from("tracker").select("*").then(function(result){
+      if(result.error){console.error("Pull error:",result.error);return;}
+      var data=result.data||[];
+      var changed=false;
+      data.forEach(function(row){
+        if(state[row.id]){
+          if(state[row.id].status!==row.status){state[row.id].status=row.status;changed=true;}
+          if(state[row.id].note!==row.note){state[row.id].note=row.note;changed=true;}
+        }
+      });
+      if(changed){render();recompute();}
+    });
   }
 
   function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;}
@@ -210,28 +229,23 @@
       top.appendChild(el("span","ownpill "+(OWNERS[m.owner]||""),m.owner));
       card.appendChild(top);
       card.appendChild(el("p","desc-line",m.desc));
-
       if(!m.event){
         var controls=el("div","controls");
         var seg=el("div","seg");
         STATUSES.forEach(function(opt){
           var b=el("button",opt.s,opt.label);
           b.setAttribute("aria-pressed",String(st===opt.s));
-          b.setAttribute("data-mid",m.id);
-          b.setAttribute("data-st",opt.s);
-          b.addEventListener("click",function(){state[m.id].status=opt.s;render();recompute();save();});
+          b.addEventListener("click",function(){state[m.id].status=opt.s;render();recompute();save(true);});
           seg.appendChild(b);
         });
         controls.appendChild(seg);
-        var note=el("input");note.className="notes";note.type="text";note.value=state[m.id].note||"";
+        var note=el("input","notes");note.type="text";note.value=state[m.id].note||"";
         note.placeholder="Add a note (owner, blockers, links)…";
-        note.setAttribute("data-mid",m.id);
-        note.addEventListener("input",function(){state[m.id].note=this.value;});
-        note.addEventListener("blur",function(){save();});
+        note.addEventListener("input",function(){state[m.id].note=this.value;save(false);});
+        note.addEventListener("change",function(){save(true);});
         controls.appendChild(note);
         card.appendChild(controls);
       }
-
       row.appendChild(card);tl.appendChild(row);
     });
   }
@@ -250,84 +264,11 @@
     document.getElementById("cBlock").textContent=block;
   }
 
-  function pushToSupabase(){
-    var rows=[];
-    Object.keys(state).forEach(function(mid){
-      rows.push({id:mid,status:state[mid].status,note:state[mid].note,tasks:{},updated_at:new Date().toISOString()});
-    });
-    console.log("PUSH to Supabase:",rows);
-    supabase.from("tracker").upsert(rows).then(function(result){
-      console.log("PUSH success:",result);
-    }).catch(function(e){
-      console.error("PUSH ERROR:",e);
-    });
-  }
-
-  function pullFromSupabase(){
-    console.log("PULL from Supabase...");
-    supabase.from("tracker").select("*").then(function(result){
-      console.log("PULL result:",result);
-      if(result.error){console.error("PULL error:",result.error);return;}
-      var data=result.data||[];
-      console.log("PULL data:",data);
-      var changed=false;
-      data.forEach(function(row){
-        if(state[row.id]){
-          if(state[row.id].status!==row.status){state[row.id].status=row.status;changed=true;}
-          if(state[row.id].note!==row.note){state[row.id].note=row.note;changed=true;}
-        }
-      });
-      if(changed){console.log("PULL: changes detected, re-rendering");render();recompute();}
-      else{console.log("PULL: no changes");}
-    }).catch(function(e){
-      console.error("PULL exception:",e);
-    });
-  }
-
   loadState();
   render();
   recompute();
-
-  // Push initial state to Supabase
   pushToSupabase();
-
-  // Sync from Supabase on initial load
-  pullFromSupabase();
-
-  // Real-time sync via Supabase WebSocket
-  console.log("Setting up realtime subscription...");
-  supabase.channel('public:tracker').on('postgres_changes',{event:'*',schema:'public',table:'tracker'},function(payload){
-    console.log('REALTIME EVENT:',payload);
-    if(payload.new){
-      var row=payload.new;
-      console.log('Received update for:',row.id);
-      if(state[row.id]){
-        var changed=false;
-        if(state[row.id].status!==row.status){
-          console.log('Status changed for '+row.id+': '+state[row.id].status+' -> '+row.status);
-          state[row.id].status=row.status;
-          changed=true;
-        }
-        if(state[row.id].note!==row.note){
-          console.log('Note changed for '+row.id);
-          state[row.id].note=row.note;
-          changed=true;
-        }
-        if(changed){
-          console.log('RE-RENDERING after realtime update');
-          render();
-          recompute();
-        }
-      }else{
-        console.log('State for '+row.id+' not found');
-      }
-    }
-  }).subscribe(function(status){
-    console.log('REALTIME STATUS:',status);
-  });
-
-  // Fallback poll every 3 seconds for safety
-  setInterval(pullFromSupabase,3000);
+  setInterval(pullFromSupabase,2000);
 })();
   </script>
 </body>
