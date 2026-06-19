@@ -263,24 +263,15 @@
   function pushToSupabase(){
     var rows=[];
     Object.keys(state).forEach(function(mid){
-      var t=state[mid].tasks||[];
-      var n=JSON.stringify(state[mid].notes||[]);
       rows.push({
         id:mid,
         status:state[mid].status,
-        note:n,
-        tasks:t,
+        note:JSON.stringify(state[mid].notes||[]),
+        tasks:Array.isArray(state[mid].tasks)?state[mid].tasks:[],
         updated_at:new Date().toISOString()
       });
     });
-    var hasTasks=rows.some(function(r){return r.tasks.length>0;});
-    var hasNotes=rows.some(function(r){return r.note!=='[]';});
-    if(hasTasks)console.log("PUSH tasks:",rows.map(function(r){return r.id+":"+JSON.stringify(r.tasks);}).filter(function(s){return s.indexOf("[")>0;}).join(" "));
-    if(hasNotes)console.log("PUSH notes:",rows.map(function(r){return r.id+":"+(r.note.length>10?r.note.substring(0,30)+"...":r.note);}).filter(function(s){return s.indexOf(":")>0&&s.indexOf("[]")<0;}).join(" "));
-    supabase.from("tracker").upsert(rows).then(function(r){
-      if(r.error)console.error("PUSH ERROR:",r.error);
-      else if(hasNotes||hasTasks)console.log("PUSH SUCCESS");
-    }).catch(function(e){});
+    supabase.from("tracker").upsert(rows).catch(function(e){});
   }
 
   function pullFromSupabase(){
@@ -288,10 +279,15 @@
       if(result.error){return;}
       var data=result.data||[];
       var changed=false;
-      var taskUpdates=[];
       data.forEach(function(row){
         var timeSinceLocalUpdate=Date.now()-(lastLocalChange[row.id]||0);
         if(state[row.id]){
+          var remoteTasks=Array.isArray(row.tasks)?row.tasks:[];
+          var localTasks=state[row.id].tasks||[];
+          var tasksMatch=JSON.stringify(localTasks)===JSON.stringify(remoteTasks);
+          if(!tasksMatch){
+            state[row.id].tasks=remoteTasks;changed=true;
+          }
           if(timeSinceLocalUpdate>2000){
             if(state[row.id].status!==row.status){
               state[row.id].status=row.status;changed=true;
@@ -306,17 +302,8 @@
               state[row.id].notes=remoteNotes;changed=true;
             }
           }
-          if(Array.isArray(row.tasks)){
-            var localStr=JSON.stringify(state[row.id].tasks||[]);
-            var remoteStr=JSON.stringify(row.tasks);
-            if(localStr!==remoteStr){
-              taskUpdates.push(row.id+": "+localStr+"→"+remoteStr);
-              state[row.id].tasks=row.tasks;changed=true;
-            }
-          }
         }
       });
-      if(taskUpdates.length>0)console.log("PULL tasks:",taskUpdates.join(" "));
       if(changed){render();recompute();}
     });
   }
@@ -429,11 +416,9 @@
             cb.addEventListener("change",function(){
               soundClick();
               state[m.id].tasks[idx]=cb.checked;
-              console.log("TASK:",m.id,"["+idx+"]=",cb.checked,"→",JSON.stringify(state[m.id].tasks));
               if(cb.checked)soundCheckmark();
-              recompute();
               save(true);
-              setTimeout(function(){render();},50);
+              render();
             });
             var label=document.createElement("label");label.textContent=task;label.style.margin="0";
             li.appendChild(cb);li.appendChild(label);tasksList.appendChild(li);
