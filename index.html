@@ -293,7 +293,7 @@
           }
           var tasks=Array.isArray(row.tasks)?row.tasks:[];
           var taskAge=lastChange[row.id]?Date.now()-lastChange[row.id]:999999;
-          if(taskAge>5000&&JSON.stringify(state[row.id].tasks||[])!==JSON.stringify(tasks)){
+          if(taskAge>10000&&JSON.stringify(state[row.id].tasks||[])!==JSON.stringify(tasks)){
             state[row.id].tasks=tasks;changed=true;
           }
         }
@@ -414,6 +414,7 @@
               if(cb.checked)soundCheckmark();
               recompute();
               save(true);
+              render();
             });
             var label=document.createElement("label");label.textContent=task;label.style.margin="0";
             li.appendChild(cb);li.appendChild(label);tasksList.appendChild(li);
