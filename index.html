@@ -249,7 +249,6 @@
 
   function save(flash){
     var ok=sLS(JSON.stringify(state));
-    Object.keys(state).forEach(function(m){lastChange[m]=Date.now();});
     if(flash){
       var n=document.getElementById("savedNote");
       n.innerHTML="✓ <b>Syncing…</b>";
@@ -280,9 +279,8 @@
       var data=result.data||[];
       var changed=false;
       data.forEach(function(row){
-        var timeSinceChange=Date.now()-(lastChange[row.id]||0);
         if(state[row.id]){
-          if(timeSinceChange>3000&&state[row.id].status!==row.status){
+          if(state[row.id].status!==row.status){
             state[row.id].status=row.status;changed=true;
           }
           var notes=[];
