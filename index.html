@@ -234,15 +234,16 @@
     Object.keys(state).forEach(function(mid){
       rows.push({id:mid,status:state[mid].status,notes:state[mid].notes||[],updated_at:new Date().toISOString()});
     });
-    console.log("PUSH:",rows.length,"rows to Supabase");
+    console.log("PUSH:",rows.length,"rows to Supabase",JSON.stringify(rows));
     supabase.from("tracker").upsert(rows).then(function(result){
+      console.log("PUSH RESPONSE:",result);
       if(result.error){
-        console.error("PUSH ERROR:",result.error);
+        console.error("PUSH ERROR - CODE:",result.error.code,"MSG:",result.error.message,"DETAILS:",result.error.details);
       }else{
         console.log("PUSH SUCCESS");
       }
     }).catch(function(err){
-      console.error("PUSH EXCEPTION:",err);
+      console.error("PUSH EXCEPTION:",err.toString(),err);
     });
   }
 
