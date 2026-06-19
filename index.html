@@ -483,6 +483,8 @@
   function init(){
     loadState();
     pullFromSupabase().then(function(){
+      for(var mid in state)syncQueue[mid]=true;
+      sendQueuedUpdates();
       render();
       recompute();
       setInterval(syncPoll,1500);
