@@ -270,15 +270,20 @@
         tasks:state[mid].tasks||[]
       });
     });
+    console.log("PUSHING",rows.length,"rows");
     supabase.from("tracker").upsert(rows).then(function(r){
-      if(r.error)console.error("PUSH ERROR",r.error);
-    }).catch(function(e){console.error("PUSH FAILED",e);});
+      console.log("PUSH RESPONSE",r);
+      if(r.error){console.error("PUSH ERROR",r.error);document.getElementById("savedNote").innerText="❌ Sync failed";}
+      else{console.log("PUSH OK");document.getElementById("savedNote").innerText="✓ Synced";}
+    }).catch(function(e){console.error("PUSH CAUGHT",e);document.getElementById("savedNote").innerText="❌ Sync error";});
   }
 
   function pullFromSupabase(){
     supabase.from("tracker").select("*").then(function(result){
-      if(result.error){return;}
+      if(result.error){console.error("PULL ERROR",result.error);return;}
+      if(!result.data){console.error("No data in pull");return;}
       var data=result.data||[];
+      console.log("PULLED",data.length,"rows");
       var changed=false;
       data.forEach(function(row){
         var age=Date.now()-(lastChange[row.id]||0);
