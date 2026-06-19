@@ -410,6 +410,7 @@
               soundClick();
               state[m.id].tasks[idx]=cb.checked;
               if(cb.checked)soundCheckmark();
+              recompute();
               save(true);
               render();
             });
