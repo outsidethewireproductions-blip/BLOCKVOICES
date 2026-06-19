@@ -292,7 +292,7 @@
             state[row.id].notes=notes;changed=true;
           }
           var tasks=Array.isArray(row.tasks)?row.tasks:[];
-          if(JSON.stringify(state[row.id].tasks||[])!==JSON.stringify(tasks)){
+          if(age>1000&&JSON.stringify(state[row.id].tasks||[])!==JSON.stringify(tasks)){
             state[row.id].tasks=tasks;changed=true;
           }
         }
