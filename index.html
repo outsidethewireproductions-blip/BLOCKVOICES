@@ -148,10 +148,6 @@
     </div>
 
     <div class="toolbar">
-      <button class="btn" id="btnExport">Export progress</button>
-      <button class="btn" id="btnImport">Import progress</button>
-      <button class="btn" id="btnShare">Copy share link</button>
-      <button class="btn ghost" id="btnReset">Reset all</button>
       <span class="saved" id="savedNote"></span>
     </div>
 
@@ -202,7 +198,7 @@
     if(source){try{var o=JSON.parse(source);Object.keys(o).forEach(function(id){if(state[id]){if(o[id]&&typeof o[id].status==="string")state[id].status=o[id].status;if(o[id]&&typeof o[id].note==="string")state[id].note=o[id].note;if(o[id]&&typeof o[id].tasks==="object")state[id].tasks=o[id].tasks;}});}catch(e){}}
     if(hash)sLS(JSON.stringify(state));
   }
-  function save(flash){var ok=sLS(JSON.stringify(state));if(sb){sb.from("blockvoices_tracker").upsert({id:"main",data:JSON.stringify(state),updated_at:new Date().toISOString()}).catch(function(){});} var n=document.getElementById("savedNote");if(flash){n.innerHTML=ok?"✓ <b>Saved</b>":"⚠ Couldn't save";clearTimeout(save._t);save._t=setTimeout(function(){n.textContent="";},2200);}}
+  function save(flash){var ok=sLS(JSON.stringify(state));if(sb){sb.from("tracker").upsert({id:"blockvoices_main",data:JSON.stringify(state),updated_at:new Date().toISOString()}).catch(function(){});} var n=document.getElementById("savedNote");if(flash){n.innerHTML=ok?"✓ <b>Saved</b>":"⚠ Couldn't save";clearTimeout(save._t);save._t=setTimeout(function(){n.textContent="";},2200);}}
   function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;}
   function getCompletion(m){
     if(!m.tasks||!m.tasks.length)return "todo";
@@ -282,14 +278,10 @@
   function importProgress(){var inp=document.createElement("input");inp.type="file";inp.accept="application/json,.json";inp.addEventListener("change",function(){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);Object.keys(o).forEach(function(id){if(state[id]){if(typeof o[id].status==="string")state[id].status=o[id].status;if(typeof o[id].note==="string")state[id].note=o[id].note;if(typeof o[id].tasks==="object")state[id].tasks=o[id].tasks;}});render();recompute();save(true);}catch(e){alert("That file didn't look like a valid progress export.");}};r.readAsText(f);});inp.click();}
   function copyShareLink(){var url=location.origin+location.pathname+"#data="+encodeURIComponent(JSON.stringify(state));function done(ok){var n=document.getElementById("savedNote");n.innerHTML=ok?"✓ <b>Link copied</b> — paste to share current status":"Link is in the address bar";clearTimeout(copyShareLink._t);copyShareLink._t=setTimeout(function(){n.textContent="";},2600);}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){done(true);},function(){location.hash="data="+encodeURIComponent(JSON.stringify(state));done(false);});}else{location.hash="data="+encodeURIComponent(JSON.stringify(state));done(false);}}
   function resetAll(){if(!confirm("Reset every phase back to its starting status and clear all notes?"))return;state=defaults();render();recompute();save(true);if(location.hash)history.replaceState(null,"",location.pathname);}
-  function syncFromDb(){if(!sb)return;sb.from("blockvoices_tracker").select("*").then(function(r){if(r.data&&r.data[0]){try{var remote=JSON.parse(r.data[0].data);Object.keys(remote).forEach(function(id){if(state[id]){state[id]=remote[id];}});render();recompute();}catch(e){}}}). catch(function(){});}
+  function syncFromDb(){if(!sb)return;sb.from("tracker").select("*").eq("id","blockvoices_main").then(function(r){if(r.data&&r.data[0]&&r.data[0].data){try{var remote=JSON.parse(r.data[0].data);Object.keys(remote).forEach(function(id){if(state[id]){state[id]=remote[id];}});render();recompute();}catch(e){}}}). catch(function(){});}
   loadState();render();recompute();
   sb=supabase.createClient(SURL,SKEY);
   setInterval(syncFromDb,2000);
-  document.getElementById("btnExport").addEventListener("click",exportProgress);
-  document.getElementById("btnImport").addEventListener("click",importProgress);
-  document.getElementById("btnShare").addEventListener("click",copyShareLink);
-  document.getElementById("btnReset").addEventListener("click",resetAll);
 })();
 </script>
 </body>
