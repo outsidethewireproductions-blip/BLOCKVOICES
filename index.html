@@ -264,18 +264,22 @@
     var rows=[];
     Object.keys(state).forEach(function(mid){
       var t=state[mid].tasks||[];
+      var n=JSON.stringify(state[mid].notes||[]);
       rows.push({
         id:mid,
         status:state[mid].status,
-        note:JSON.stringify(state[mid].notes||[]),
+        note:n,
         tasks:t,
         updated_at:new Date().toISOString()
       });
     });
     var hasTasks=rows.some(function(r){return r.tasks.length>0;});
+    var hasNotes=rows.some(function(r){return r.note!=='[]';});
     if(hasTasks)console.log("PUSH tasks:",rows.map(function(r){return r.id+":"+JSON.stringify(r.tasks);}).filter(function(s){return s.indexOf("[")>0;}).join(" "));
+    if(hasNotes)console.log("PUSH notes:",rows.map(function(r){return r.id+":"+(r.note.length>10?r.note.substring(0,30)+"...":r.note);}).filter(function(s){return s.indexOf(":")>0&&s.indexOf("[]")<0;}).join(" "));
     supabase.from("tracker").upsert(rows).then(function(r){
       if(r.error)console.error("PUSH ERROR:",r.error);
+      else if(hasNotes||hasTasks)console.log("PUSH SUCCESS");
     }).catch(function(e){});
   }
 
@@ -288,7 +292,7 @@
       data.forEach(function(row){
         var timeSinceLocalUpdate=Date.now()-(lastLocalChange[row.id]||0);
         if(state[row.id]){
-          if(timeSinceLocalUpdate>1500){
+          if(timeSinceLocalUpdate>2000){
             if(state[row.id].status!==row.status){
               state[row.id].status=row.status;changed=true;
             }
@@ -377,7 +381,9 @@
             e.preventDefault();
             e.stopPropagation();
             soundClick();
+            console.log("DELETE NOTE:",m.id,"idx",idx,"note:",noteObj.text);
             state[m.id].notes.splice(idx,1);
+            console.log("NOTES AFTER DELETE:",m.id,"=",JSON.stringify(state[m.id].notes));
             render();recompute();save(true);
           });
           var noteContent=el("div");
