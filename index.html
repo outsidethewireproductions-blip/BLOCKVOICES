@@ -280,8 +280,8 @@
       var changed=false;
       data.forEach(function(row){
         var timeSinceChange=Date.now()-(lastChange[row.id]||0);
-        if(state[row.id]&&timeSinceChange>2000){
-          if(state[row.id].status!==row.status){
+        if(state[row.id]){
+          if(timeSinceChange>2000&&state[row.id].status!==row.status){
             state[row.id].status=row.status;changed=true;
           }
           var notes=[];
