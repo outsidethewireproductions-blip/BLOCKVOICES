@@ -233,7 +233,6 @@
   }
 
   var currentUserName="";
-  var lastChange={};
 
   function initUserName(){
     var stored=localStorage.getItem("blockvoices_userName")||"";
@@ -270,7 +269,9 @@
         tasks:state[mid].tasks||[]
       });
     });
-    supabase.from("tracker").upsert(rows);
+    supabase.from("tracker").upsert(rows).then(function(r){
+      if(r.error)console.error("PUSH ERROR",r.error);
+    }).catch(function(e){console.error("PUSH FAILED",e);});
   }
 
   function pullFromSupabase(){
@@ -281,7 +282,7 @@
       data.forEach(function(row){
         var timeSinceChange=Date.now()-(lastChange[row.id]||0);
         if(state[row.id]){
-          if(timeSinceChange>2000&&state[row.id].status!==row.status){
+          if(timeSinceChange>3000&&state[row.id].status!==row.status){
             state[row.id].status=row.status;changed=true;
           }
           var notes=[];
