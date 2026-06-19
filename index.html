@@ -217,7 +217,8 @@
   }
 
   function save(flash){
-    sLS(JSON.stringify(state));
+    var ok=sLS(JSON.stringify(state));
+    console.log("SAVE:",ok?"localStorage OK":"localStorage FAILED",JSON.stringify(state).length,"bytes");
     if(flash){
       var n=document.getElementById("savedNote");
       n.innerHTML="✓ <b>Syncing…</b>";
@@ -232,8 +233,15 @@
     Object.keys(state).forEach(function(mid){
       rows.push({id:mid,status:state[mid].status,notes:state[mid].notes||[],updated_at:new Date().toISOString()});
     });
+    console.log("PUSH:",rows.length,"rows to Supabase");
     supabase.from("tracker").upsert(rows).then(function(result){
-      if(result.error)console.error("Push error:",result.error);
+      if(result.error){
+        console.error("PUSH ERROR:",result.error);
+      }else{
+        console.log("PUSH SUCCESS");
+      }
+    }).catch(function(err){
+      console.error("PUSH EXCEPTION:",err);
     });
   }
 
