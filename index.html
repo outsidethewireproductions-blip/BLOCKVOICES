@@ -12,7 +12,6 @@
     --muted:#6E6A5E; --gold:#E9BF37; --gold-d:#C99E12;
     --joint:#DAD8D0; --skylark:#A6C4F5; --skylark-tx:#1b294f;
     --teal:#15B8C4; --magenta:#C42FB2; --violet:#7B53E6; --cyan:#19C8E0;
-    --todo:#9A968A; --prog:#15B8C4; --done:var(--gold); --block:#C42FB2;
     --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
     --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     color-scheme: light;
@@ -47,17 +46,6 @@
   .pillcount{font-family:var(--mono);font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:#fff;letter-spacing:.02em}
   .pillcount b{font-weight:700}
   .pillcount.done{color:var(--gold-d)} .pillcount.prog{color:#0b8b95} .pillcount.todo{color:var(--muted)} .pillcount.block{color:var(--magenta)}
-
-  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
-  .saved{font-size:12px;color:var(--muted);align-self:center;margin-left:auto;font-family:var(--mono)}
-  .saved b{color:var(--gold-d)}
-
-  .legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:18px 0 24px;font-family:var(--mono);font-size:12px}
-  .legend .lab{font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink)}
-  .legdot{display:inline-flex;align-items:center;gap:7px;color:#3a3730}
-  .legdot i{width:12px;height:12px;border-radius:50%;display:inline-block}
-  .d-otw{background:var(--gold)} .d-joint{background:#BFBCB0}
-  .d-skylark{background:var(--skylark)} .d-bv{background:linear-gradient(135deg,var(--cyan),var(--violet),var(--magenta))}
 
   .timeline{position:relative;margin-left:7px;padding-left:30px;border-left:3px solid var(--gold)}
   .row{position:relative;margin:0 0 18px}
@@ -94,6 +82,31 @@
   .task-item input[type="checkbox"]{cursor:pointer;width:16px;height:16px;accent-color:var(--gold)}
   .task-item label{cursor:pointer;flex:1;color:#3c392f}
 
+  .comments-section{margin:15px 0 0;padding:12px 0 0;border-top:1px solid var(--line)}
+  .comment-item{background:#faf9f5;border-radius:6px;padding:10px;margin:8px 0;font-size:12px}
+  .comment-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;color:var(--muted)}
+  .comment-actions{display:flex;gap:6px}
+  .comment-btn{font-family:var(--mono);font-size:10px;padding:3px 8px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;border-radius:4px;transition:.1s}
+  .comment-btn:hover{color:var(--ink)}
+  .comment-text{color:var(--ink);margin:6px 0}
+  .attachment-item{display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:4px;margin:6px 0;font-size:11px}
+  .attachment-icon{font-size:14px}
+  .attachment-name{color:var(--teal);text-decoration:none;cursor:pointer}
+  .attachment-name:hover{text-decoration:underline}
+  .attachment-delete{cursor:pointer;color:var(--muted);font-weight:700;padding:0 4px}
+  .attachment-delete:hover{color:var(--magenta)}
+
+  .comment-form{margin:10px 0 0}
+  .comment-input{width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;font-family:var(--mono);font-size:12px;margin-bottom:6px}
+  .btn{padding:6px 12px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;transition:.1s}
+  .btn:hover{border-color:var(--gold-d);background:#fffdf3}
+  .btn-group{display:flex;gap:6px}
+
+  .file-input-wrapper{display:inline-block}
+  .file-input-label{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;transition:.1s}
+  .file-input-label:hover{border-color:var(--gold-d);background:#fffdf3}
+  .file-input-hidden{display:none}
+
   .live-strip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:6px;background:#f0f0f0;font-size:11px;font-weight:600}
   .live-strip.live-on{background:#e0f7f6}
   .live-dot{width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block}
@@ -118,7 +131,7 @@
 </div>
 
 <div class="wrap">
-  <p class="intro">Team and client see <b>all updates instantly</b>. Change a status, everyone's page refreshes within seconds.</p>
+  <p class="intro">Team and client see <b>all updates instantly</b>. Change a status, add notes, upload files—everyone's page updates within seconds.</p>
 
   <div class="summary">
     <div class="bigpct"><span id="pct">0</span>%<small>done</small></div>
@@ -167,18 +180,7 @@
   var OWNERS={"Outside The Wire":"o-otw","Joint":"o-joint","BlockVoices":"o-bv"};
   var state={},sb=null;
 
-  function defaults(){var d={};MILESTONES.forEach(function(m){var t={};if(m.tasks)m.tasks.forEach(function(tk,i){t[i]=false;});d[m.id]={status:"todo",tasks:t};});d.strategy.status="complete";return d;}
-
-  function getCompletionStatus(milestoneId){
-    var m=MILESTONES.find(function(mm){return mm.id===milestoneId;});
-    if(!m||!m.tasks)return "todo";
-    var total=m.tasks.length;
-    var checked=0;
-    m.tasks.forEach(function(tk,i){if(state[milestoneId].tasks[i])checked++;});
-    if(checked===total)return "complete";
-    if(checked>0)return "in-progress";
-    return "todo";
-  }
+  function defaults(){var d={};MILESTONES.forEach(function(m){var t={};if(m.tasks)m.tasks.forEach(function(tk,i){t[i]=false;});d[m.id]={status:"todo",tasks:t,comments:[]};});d.strategy.status="complete";return d;}
 
   function render(){
     var tl=document.getElementById("timeline");tl.innerHTML="";
@@ -190,7 +192,10 @@
       card.className="card";
       var top=document.createElement("div");
       top.className="card-top";
-      top.appendChild(document.createTextNode(m.date));
+      var dateEl=document.createElement("span");
+      dateEl.className="date";
+      dateEl.textContent=m.date;
+      top.appendChild(dateEl);
       var title=document.createElement("h2");
       title.className="title";
       title.textContent=m.title;
@@ -223,8 +228,202 @@
         card.appendChild(cl);
       }
 
+      var cs=document.createElement("div");
+      cs.className="comments-section";
+
+      var cl=document.createElement("div");
+      if(state[m.id].comments&&state[m.id].comments.length>0){
+        state[m.id].comments.forEach(function(c,idx){
+          var ci=document.createElement("div");
+          ci.className="comment-item";
+          var dt=new Date(c.ts);
+          var hdr=document.createElement("div");
+          hdr.className="comment-header";
+          var tsEl=document.createElement("div");
+          tsEl.textContent=dt.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+          hdr.appendChild(tsEl);
+          var acts=document.createElement("div");
+          acts.className="comment-actions";
+          var editBtn=document.createElement("button");
+          editBtn.className="comment-btn";
+          editBtn.textContent="Edit";
+          editBtn.addEventListener("click",function(){editComment(m.id,idx);});
+          var delBtn=document.createElement("button");
+          delBtn.className="comment-btn";
+          delBtn.textContent="Delete";
+          delBtn.addEventListener("click",function(){deleteComment(m.id,idx);});
+          acts.appendChild(editBtn);acts.appendChild(delBtn);
+          hdr.appendChild(acts);
+          ci.appendChild(hdr);
+          var txt=document.createElement("div");
+          txt.className="comment-text";
+          txt.textContent=c.t;
+          ci.appendChild(txt);
+          if(c.att&&c.att.length){
+            c.att.forEach(function(a){
+              var attDiv=document.createElement("div");
+              attDiv.className="attachment-item";
+              var icon=document.createElement("div");
+              icon.className="attachment-icon";
+              icon.textContent="📄";
+              attDiv.appendChild(icon);
+              var name=document.createElement("a");
+              name.className="attachment-name";
+              name.href=a.url;
+              name.target="_blank";
+              name.textContent=a.name;
+              attDiv.appendChild(name);
+              var del=document.createElement("div");
+              del.className="attachment-delete";
+              del.textContent="✕";
+              del.addEventListener("click",function(){deleteAttachment(m.id,idx,c.att.indexOf(a));});
+              attDiv.appendChild(del);
+              ci.appendChild(attDiv);
+            });
+          }
+          cl.appendChild(ci);
+        });
+      }
+      cs.appendChild(cl);
+
+      var form=document.createElement("div");
+      form.className="comment-form";
+      var inp=document.createElement("input");
+      inp.className="comment-input";
+      inp.type="text";
+      inp.placeholder="Add a comment or note…";
+      inp.setAttribute("data-mid",m.id);
+      var fbg=document.createElement("div");
+      fbg.className="btn-group";
+      var addBtn=document.createElement("button");
+      addBtn.className="btn";
+      addBtn.textContent="Add Comment";
+      addBtn.addEventListener("click",function(){addComment(m.id,inp,form);});
+      inp.addEventListener("keypress",function(e){if(e.key==="Enter"){addComment(m.id,inp,form);}});
+      var fileLabel=document.createElement("label");
+      fileLabel.className="file-input-label";
+      fileLabel.textContent="📎 Attach File";
+      var fileInput=document.createElement("input");
+      fileInput.type="file";
+      fileInput.className="file-input-hidden";
+      fileInput.setAttribute("data-mid",m.id);
+      fileInput.addEventListener("change",function(e){handleFileSelect(e,m.id,form);});
+      fileLabel.appendChild(fileInput);
+      fbg.appendChild(addBtn);fbg.appendChild(fileLabel);
+      form.appendChild(inp);form.appendChild(fbg);
+      var attList=document.createElement("div");
+      attList.setAttribute("data-mid",m.id);
+      attList.setAttribute("data-temp","true");
+      form.appendChild(attList);
+      cs.appendChild(form);
+
+      card.appendChild(cs);
       row.appendChild(card);tl.appendChild(row);
     });
+  }
+
+  function addComment(mid,inp,form){
+    var txt=inp.value.trim();
+    if(!txt){
+      var attList=form.querySelector("[data-temp='true']");
+      if(!attList||!attList.children.length)return;
+    }
+    if(!state[mid].comments)state[mid].comments=[];
+    var atts=[];
+    var attList=form.querySelector("[data-temp='true']");
+    if(attList){
+      for(var i=0;i<attList.children.length;i++){
+        var item=attList.children[i];
+        if(item.classList.contains("uploading")||item.classList.contains("error"))continue;
+        var link=item.querySelector("a");
+        var sz=item.querySelector("span");
+        if(link&&link.href){
+          atts.push({name:link.textContent,url:link.href});
+        }
+      }
+      attList.innerHTML="";
+    }
+    state[mid].comments.push({t:txt,ts:new Date().toISOString(),att:atts});
+    inp.value="";
+    persist(mid);
+    render();
+  }
+
+  function editComment(mid,cidx){
+    var c=state[mid].comments[cidx];
+    var newTxt=prompt("Edit comment:",c.t);
+    if(newTxt===null)return;
+    c.t=newTxt;
+    persist(mid);
+    render();
+  }
+
+  function deleteComment(mid,cidx){
+    if(!confirm("Delete this comment?"))return;
+    state[mid].comments.splice(cidx,1);
+    persist(mid);
+    render();
+  }
+
+  function deleteAttachment(mid,cidx,aidx){
+    var c=state[mid].comments[cidx];
+    if(c.att&&c.att[aidx]){
+      c.att.splice(aidx,1);
+      persist(mid);
+      render();
+    }
+  }
+
+  function handleFileSelect(e,mid,form){
+    var files=e.target.files;
+    for(var i=0;i<files.length;i++){
+      uploadFile(files[i],mid,form);
+    }
+    e.target.value="";
+  }
+
+  function uploadFile(file,mid,form){
+    var attList=form.querySelector("[data-temp='true']");
+    var item=document.createElement("div");
+    item.className="attachment-item uploading";
+    var icon=document.createElement("div");
+    icon.className="attachment-icon";
+    icon.textContent="⏳";
+    item.appendChild(icon);
+    var name=document.createElement("div");
+    name.style.cssText="flex:1";
+    name.textContent=file.name;
+    item.appendChild(name);
+    attList.appendChild(item);
+
+    var reader=new FileReader();
+    reader.onload=function(evt){
+      var path="tracker-attachments/"+Date.now()+"_"+file.name;
+      sb.storage.from("tracker-attachments").upload(path,file).then(function(res){
+        if(res.error)throw res.error;
+        var url=sb.storage.from("tracker-attachments").getPublicUrl(path).data.publicUrl;
+        item.classList.remove("uploading");
+        icon.textContent="📄";
+        name.textContent="";
+        var link=document.createElement("a");
+        link.className="attachment-name";
+        link.href=url;
+        link.target="_blank";
+        link.textContent=file.name;
+        name.appendChild(link);
+        var sz=document.createElement("span");
+        sz.style.cssText="font-size:10px;color:var(--muted);margin-left:6px";
+        sz.textContent="("+Math.round(file.size/1024)+"KB)";
+        name.appendChild(sz);
+      }).catch(function(err){
+        console.error("Upload error:",err);
+        item.classList.remove("uploading");
+        item.classList.add("error");
+        icon.textContent="❌";
+        name.textContent="Upload failed";
+      });
+    };
+    reader.readAsArrayBuffer(file);
   }
 
   function recompute(){
@@ -242,15 +441,16 @@
 
   function persist(id){
     if(sb){
-      sb.from("tracker").upsert({id:id,status:state[id].status,updated_at:new Date().toISOString()}).then(function(res){
-        if(res.error){console.error(res.error);}
-      });
+      sb.from("tracker").upsert({id:id,status:state[id].status,comments:JSON.stringify(state[id].comments),updated_at:new Date().toISOString()}).catch(function(e){console.error(e);});
     }
   }
 
   function applyRow(r){
     if(r&&state[r.id]){
       state[r.id].status=r.status||state[r.id].status;
+      if(r.comments){
+        try{state[r.id].comments=JSON.parse(r.comments);}catch(e){state[r.id].comments=[];}
+      }
     }
   }
 
@@ -259,7 +459,7 @@
     sb.from("tracker").select("*").then(function(res){
       if(res.error){return;}
       if(!res.data||res.data.length===0){
-        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,updated_at:new Date().toISOString()};});
+        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,comments:"[]",updated_at:new Date().toISOString()};});
         sb.from("tracker").upsert(seed).then(function(){});
       } else { res.data.forEach(applyRow); }
       render();recompute();
