@@ -90,6 +90,27 @@
   .live-strip.live-on{background:#e0f7f6}
   .live-dot{width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block}
   .live-on .live-dot{background:#15B8C4}
+
+  .comments-section{margin:15px 0 0;padding:12px 0 0;border-top:1px solid var(--line)}
+  .comment-item{background:#faf9f5;border-radius:6px;padding:10px;margin:8px 0;font-size:12px}
+  .comment-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;color:var(--muted)}
+  .comment-actions{display:flex;gap:6px}
+  .comment-btn{font-family:var(--mono);font-size:10px;padding:3px 8px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;border-radius:4px}
+  .comment-btn:hover{color:var(--ink)}
+  .comment-text{color:var(--ink);margin:6px 0}
+  .attachment{display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:4px;margin:6px 0;font-size:11px}
+  .attachment-name{color:var(--teal);text-decoration:none}
+  .attachment-name:hover{text-decoration:underline}
+  .attachment-delete{cursor:pointer;color:var(--muted)}
+  .attachment-delete:hover{color:var(--magenta)}
+  .comment-form{margin:10px 0 0}
+  .comment-input{width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;font-family:var(--mono);font-size:12px;margin-bottom:6px}
+  .comment-actions-form{display:flex;gap:6px}
+  .btn{padding:6px 12px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px}
+  .btn:hover{border-color:var(--gold-d);background:#fffdf3}
+  .file-label{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px}
+  .file-label:hover{border-color:var(--gold-d);background:#fffdf3}
+  .file-input{display:none}
 </style>
 </head>
 <body>
@@ -159,7 +180,7 @@
   var OWNERS={"Outside The Wire":"o-otw","Joint":"o-joint","BlockVoices":"o-bv"};
   var state={},sb=null;
 
-  function defaults(){var d={};MILESTONES.forEach(function(m){var t={};if(m.tasks)m.tasks.forEach(function(tk,i){t[i]=false;});d[m.id]={status:"todo",tasks:t};});d.strategy.status="complete";return d;}
+  function defaults(){var d={};MILESTONES.forEach(function(m){var t={};if(m.tasks)m.tasks.forEach(function(tk,i){t[i]=false;});d[m.id]={status:"todo",tasks:t,comments:[]};});d.strategy.status="complete";return d;}
 
   function render(){
     var tl=document.getElementById("timeline");tl.innerHTML="";
@@ -207,6 +228,70 @@
         card.appendChild(cl);
       }
 
+      var cs=document.createElement("div");
+      cs.className="comments-section";
+      if(state[m.id].comments&&state[m.id].comments.length){
+        state[m.id].comments.forEach(function(c,cidx){
+          var ci=document.createElement("div");
+          ci.className="comment-item";
+          var dt=new Date(c.ts);
+          var hdr=document.createElement("div");
+          hdr.className="comment-header";
+          var ts=document.createElement("div");
+          ts.textContent=dt.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+          hdr.appendChild(ts);
+          var acts=document.createElement("div");
+          acts.className="comment-actions";
+          var editBtn=document.createElement("button");
+          editBtn.className="comment-btn";
+          editBtn.textContent="Edit";
+          editBtn.addEventListener("click",function(){editComment(m.id,cidx);});
+          var delBtn=document.createElement("button");
+          delBtn.className="comment-btn";
+          delBtn.textContent="Delete";
+          delBtn.addEventListener("click",function(){deleteComment(m.id,cidx);});
+          acts.appendChild(editBtn);acts.appendChild(delBtn);
+          hdr.appendChild(acts);
+          ci.appendChild(hdr);
+          var txt=document.createElement("div");
+          txt.className="comment-text";
+          txt.textContent=c.t;
+          ci.appendChild(txt);
+          if(c.a&&c.a.length){c.a.forEach(function(att){
+            var attDiv=document.createElement("div");
+            attDiv.className="attachment";
+            attDiv.innerHTML='<div style="font-size:14px">📄</div><a class="attachment-name" href="'+att.u+'" target="_blank">'+att.n+'</a><span class="attachment-delete" onclick="deleteAtt(\''+m.id+'\','+cidx+','+c.a.indexOf(att)+')">✕</span>';
+            ci.appendChild(attDiv);
+          });}
+          cs.appendChild(ci);
+        });
+      }
+      var form=document.createElement("div");
+      form.className="comment-form";
+      var inp=document.createElement("input");
+      inp.className="comment-input";
+      inp.type="text";
+      inp.placeholder="Add comment or note…";
+      var fbg=document.createElement("div");
+      fbg.className="comment-actions-form";
+      var addBtn=document.createElement("button");
+      addBtn.className="btn";
+      addBtn.textContent="Add";
+      addBtn.addEventListener("click",function(){addComment(m.id,inp);});
+      inp.addEventListener("keypress",function(e){if(e.key==="Enter")addComment(m.id,inp);});
+      var fileLabel=document.createElement("label");
+      fileLabel.className="file-label";
+      fileLabel.textContent="📎 Attach";
+      var fileInput=document.createElement("input");
+      fileInput.type="file";
+      fileInput.className="file-input";
+      fileInput.addEventListener("change",function(e){uploadFile(e,m.id);});
+      fileLabel.appendChild(fileInput);
+      fbg.appendChild(addBtn);fbg.appendChild(fileLabel);
+      form.appendChild(inp);form.appendChild(fbg);
+      cs.appendChild(form);
+      card.appendChild(cs);
+
       row.appendChild(card);tl.appendChild(row);
     });
   }
@@ -224,15 +309,66 @@
     document.getElementById("barfill").style.width=pct+"%";
   }
 
+  function addComment(mid,inp){
+    var txt=inp.value.trim();
+    if(!txt)return;
+    if(!state[mid].comments)state[mid].comments=[];
+    state[mid].comments.push({t:txt,ts:new Date().toISOString(),a:[]});
+    inp.value="";
+    persist(mid);
+    render();
+  }
+
+  function editComment(mid,cidx){
+    var c=state[mid].comments[cidx];
+    var newTxt=prompt("Edit comment:",c.t);
+    if(newTxt===null)return;
+    c.t=newTxt;
+    persist(mid);
+    render();
+  }
+
+  function deleteComment(mid,cidx){
+    if(!confirm("Delete?"))return;
+    state[mid].comments.splice(cidx,1);
+    persist(mid);
+    render();
+  }
+
+  function deleteAtt(mid,cidx,aidx){
+    state[mid].comments[cidx].a.splice(aidx,1);
+    persist(mid);
+    render();
+  }
+
+  function uploadFile(e,mid){
+    var file=e.target.files[0];
+    if(!file||!sb)return;
+    var path="tracker-attachments/"+Date.now()+"_"+file.name;
+    sb.storage.from("tracker-attachments").upload(path,file).then(function(res){
+      if(res.error)throw res.error;
+      var url=sb.storage.from("tracker-attachments").getPublicUrl(path).data.publicUrl;
+      if(!state[mid].comments)state[mid].comments=[];
+      if(!state[mid].comments[state[mid].comments.length-1])state[mid].comments.push({t:"",ts:new Date().toISOString(),a:[]});
+      var lastC=state[mid].comments[state[mid].comments.length-1];
+      if(!lastC.a)lastC.a=[];
+      lastC.a.push({n:file.name,u:url});
+      persist(mid);
+      render();
+      e.target.value="";
+    }).catch(function(err){console.error(err);alert("Upload failed");});
+  }
+
   function persist(id){
     if(sb){
-      sb.from("tracker").upsert({id:id,status:state[id].status,updated_at:new Date().toISOString()}).catch(function(e){console.error(e);});
+      sb.from("tracker").upsert({id:id,status:state[id].status,comments:JSON.stringify(state[id].comments),updated_at:new Date().toISOString()}).catch(function(e){console.error(e);});
     }
   }
 
   function applyRow(r){
     if(r&&state[r.id]){
       state[r.id].status=r.status||state[r.id].status;
+      if(r.comments){try{state[r.id].comments=JSON.parse(r.comments);}catch(e){state[r.id].comments=[];}}
     }
   }
 
@@ -241,7 +377,7 @@
     sb.from("tracker").select("*").then(function(res){
       if(res.error){return;}
       if(!res.data||res.data.length===0){
-        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,updated_at:new Date().toISOString()};});
+        var seed=MILESTONES.map(function(m){return {id:m.id,status:state[m.id].status,comments:"[]",updated_at:new Date().toISOString()};});
         sb.from("tracker").upsert(seed).then(function(){});
       } else { res.data.forEach(applyRow); }
       render();recompute();
