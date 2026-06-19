@@ -217,7 +217,10 @@
     }
   }
 
+  var lastLocalChange=0;
+
   function save(flash){
+    lastLocalChange=Date.now();
     var ok=sLS(JSON.stringify(state));
     console.log("SAVE:",ok?"localStorage OK":"localStorage FAILED",JSON.stringify(state).length,"bytes");
     if(flash){
@@ -248,6 +251,11 @@
   }
 
   function pullFromSupabase(){
+    var timeSinceLastChange=Date.now()-lastLocalChange;
+    if(timeSinceLastChange<3000){
+      console.log("SKIP PULL - local change too recent",timeSinceLastChange,"ms ago");
+      return;
+    }
     supabase.from("tracker").select("*").then(function(result){
       if(result.error){console.error("Pull error:",result.error);return;}
       var data=result.data||[];
@@ -313,8 +321,11 @@
           var delBtn=document.createElement("button");delBtn.className="note-btn delete";delBtn.type="button";delBtn.textContent="Delete";
           editBtn.addEventListener("click",function(e){
             e.preventDefault();
+            e.stopPropagation();
+            console.log("EDIT NOTE CLICK",idx,note);
             var newText=prompt("Edit note:",note);
             if(newText!==null){
+              console.log("EDIT SAVING:",newText);
               soundClick();
               state[m.id].notes[idx]=newText;
               render();recompute();save(true);
@@ -322,6 +333,8 @@
           });
           delBtn.addEventListener("click",function(e){
             e.preventDefault();
+            e.stopPropagation();
+            console.log("DELETE NOTE CLICK",idx,note);
             soundClick();
             state[m.id].notes.splice(idx,1);
             render();recompute();save(true);
