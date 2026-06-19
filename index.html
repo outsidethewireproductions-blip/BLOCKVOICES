@@ -257,12 +257,6 @@
           txt.className="comment-text";
           txt.textContent=c.t;
           ci.appendChild(txt);
-          if(c.a&&c.a.length){c.a.forEach(function(att){
-            var attDiv=document.createElement("div");
-            attDiv.className="attachment";
-            attDiv.innerHTML='<div style="font-size:14px">📄</div><a class="attachment-name" href="'+att.u+'" target="_blank">'+att.n+'</a><span class="attachment-delete" onclick="deleteAtt(\''+m.id+'\','+cidx+','+c.a.indexOf(att)+')">✕</span>';
-            ci.appendChild(attDiv);
-          });}
           cs.appendChild(ci);
         });
       }
@@ -272,23 +266,12 @@
       inp.className="comment-input";
       inp.type="text";
       inp.placeholder="Add comment or note…";
-      var fbg=document.createElement("div");
-      fbg.className="comment-actions-form";
       var addBtn=document.createElement("button");
       addBtn.className="btn";
       addBtn.textContent="Add";
       addBtn.addEventListener("click",function(){addComment(m.id,inp);});
       inp.addEventListener("keypress",function(e){if(e.key==="Enter")addComment(m.id,inp);});
-      var fileLabel=document.createElement("label");
-      fileLabel.className="file-label";
-      fileLabel.textContent="📎 Attach";
-      var fileInput=document.createElement("input");
-      fileInput.type="file";
-      fileInput.className="file-input";
-      fileInput.addEventListener("change",function(e){uploadFile(e,m.id);});
-      fileLabel.appendChild(fileInput);
-      fbg.appendChild(addBtn);fbg.appendChild(fileLabel);
-      form.appendChild(inp);form.appendChild(fbg);
+      form.appendChild(inp);form.appendChild(addBtn);
       cs.appendChild(form);
       card.appendChild(cs);
 
@@ -313,7 +296,7 @@
     var txt=inp.value.trim();
     if(!txt)return;
     if(!state[mid].comments)state[mid].comments=[];
-    state[mid].comments.push({t:txt,ts:new Date().toISOString(),a:[]});
+    state[mid].comments.push({t:txt,ts:new Date().toISOString()});
     inp.value="";
     persist(mid);
     render();
@@ -334,20 +317,6 @@
     persist(mid);
     render();
   }
-
-  function deleteAtt(mid,cidx,aidx){
-    state[mid].comments[cidx].a.splice(aidx,1);
-    persist(mid);
-    render();
-  }
-
-  function uploadFile(e,mid){
-    var file=e.target.files[0];
-    if(!file||!sb)return;
-    var path="tracker-attachments/"+Date.now()+"_"+file.name;
-    sb.storage.from("tracker-attachments").upload(path,file).then(function(res){
-      if(res.error)throw res.error;
-      var url=sb.storage.from("tracker-attachments").getPublicUrl(path).data.publicUrl;
       if(!state[mid].comments)state[mid].comments=[];
       if(!state[mid].comments[state[mid].comments.length-1])state[mid].comments.push({t:"",ts:new Date().toISOString(),a:[]});
       var lastC=state[mid].comments[state[mid].comments.length-1];
