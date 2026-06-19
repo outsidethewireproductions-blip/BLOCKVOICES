@@ -232,7 +232,6 @@
     }
   }
 
-  var lastLocalChange={};
   var currentUserName="";
 
   function initUserName(){
@@ -250,7 +249,6 @@
 
   function save(flash){
     var ok=sLS(JSON.stringify(state));
-    Object.keys(state).forEach(function(mid){lastLocalChange[mid]=Date.now();});
     if(flash){
       var n=document.getElementById("savedNote");
       n.innerHTML="✓ <b>Syncing…</b>";
