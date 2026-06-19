@@ -122,6 +122,13 @@
   .note-input{font-family:var(--mono);font-size:12px;flex:1;border:1px solid #eddca0;border-radius:6px;padding:6px 8px;background:#fff}
   .note-input:focus{outline:none;border-color:var(--gold-d);box-shadow:0 0 0 2px rgba(233,191,55,0.1)}
 
+  .name-input-group{display:flex;align-items:center;gap:10px;margin-top:12px;justify-content:center;font-size:12px}
+  .name-input-group label{color:var(--muted);font-weight:600}
+  .name-input-group input{padding:6px 10px;border:1px solid var(--line);border-radius:4px;font-family:var(--mono);font-size:12px;background:#fff;color:var(--ink);width:200px}
+  .name-input-group input:focus{outline:none;border-color:var(--gold-d);background:#fffdf3}
+
+  .note-owner{font-size:10px;color:var(--muted);font-weight:600;margin-bottom:4px;display:block}
+
   footer{font-size:11px;color:var(--muted);margin:60px 0 0;padding:20px;border-top:1px solid var(--line);line-height:1.6}
 </style>
 </head>
@@ -132,6 +139,10 @@
   <div class="band"><div class="inner">
     <h1>Project Timeline</h1>
     <p class="sub">2026 BlockVoices Summit&nbsp; ·&nbsp; August 19–20, 2026&nbsp; ·&nbsp; Martha's Vineyard&nbsp; ·&nbsp; prepared June 13, 2026</p>
+    <div class="name-input-group">
+      <label for="userName">Your Name:</label>
+      <input type="text" id="userName" placeholder="Enter your name" />
+    </div>
   </div></div>
   <div class="wrap">
     <p class="intro">Production schedule for the BlockVoices video series, created by Outside The Wire Productions for the 2026 BlockVoices Summit. Deliverables include the nine-topic video series, social media flyers, and this project timeline. Phases run from kickoff through final delivery; some overlap. Dates assume the deposit is received at kickoff and shift with it. Final delivery lands at least two weeks before the Summit. <b>Mark each phase To&nbsp;Do, In&nbsp;Progress, or Done — your status saves automatically in this browser.</b></p>
@@ -172,9 +183,10 @@
   var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4amxpYWJya2NqaHdzY3lqZ211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTAzOTEsImV4cCI6MjA5NzM4NjM5MX0.tt0vx8486B7Foktev4c9ndaVrAzF5510nrvw49VIMgg";
   var supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-  var OWNERS={"Outside The Wire":"o-otw","BlockVoices":"o-bv","Joint":"o-joint"};
+  var OWNERS={"Outside The Wire":"o-otw","Skylark":"o-skylark","BlockVoices":"o-bv","Joint":"o-joint"};
   var MILESTONES=[
-    {id:"kickoff",date:"Jun 16",title:"Kickoff & Deposit",owner:"Joint",desc:"Deposit received authorizes the start.",tasks:["Deposit received","Scope locked","Recording logistics confirmed"],def:"todo"},
+    {id:"strategy",date:"ASAP",title:"Strategy & Creative Direction",owner:"Skylark",desc:"Series framework + two production guides. Co-developed with Skylark.",tasks:["Series framework","Production guide 1","Production guide 2"],def:"todo"},
+    {id:"kickoff",date:"Jun 16",title:"Kickoff & Deposit",owner:"Joint",desc:"Deposit received authorizes the start.",tasks:["Deposit received authorizes the start","Scope, speaker list, topics, and recording logistics locked with BlockVoices","Project timeline (this document) shared"],def:"todo"},
     {id:"speaker",date:"Jun 16-22",title:"Speaker Packages (x9)",owner:"Outside The Wire",desc:"Mission/intent, details, and questions built for each of the nine speakers.",tasks:["Interview questions prepared","Mission statement created","Send to participants"],def:"todo"},
     {id:"recording",date:"By Jun 30",title:"Recording (Zoom)",owner:"Outside The Wire",desc:"Interviews recorded via Zoom; voiceover and narration recorded.",tasks:["Conduct 9 interviews","Record voiceover","Record narration","Retakes if needed"],def:"todo"},
     {id:"editing",date:"Jul 1-14",title:"Editing & Assembly",owner:"Outside The Wire",desc:"Trim and assemble the nine sessions into clean topic videos.",tasks:["Trim sessions","Assemble videos","Quality check"],def:"todo"},
@@ -218,6 +230,20 @@
   }
 
   var lastLocalChange=0;
+  var currentUserName="";
+
+  function initUserName(){
+    var stored=localStorage.getItem("blockvoices_userName")||"";
+    currentUserName=stored;
+    var input=document.getElementById("userName");
+    if(input){
+      input.value=stored;
+      input.addEventListener("change",function(){
+        currentUserName=input.value.trim();
+        localStorage.setItem("blockvoices_userName",currentUserName);
+      });
+    }
+  }
 
   function save(flash){
     lastLocalChange=Date.now();
@@ -278,6 +304,11 @@
           var localNotes=JSON.stringify(state[row.id].notes||[]);
           var remoteNotesStr=JSON.stringify(remoteNotes);
           if(localNotes!==remoteNotesStr){state[row.id].notes=remoteNotes;changed=true;}
+          if(row.tasks&&typeof row.tasks==="object"){
+            var localTasks=JSON.stringify(state[row.id].tasks||{});
+            var remoteTasks=JSON.stringify(row.tasks);
+            if(localTasks!==remoteTasks){state[row.id].tasks=row.tasks;changed=true;}
+          }
         }
       });
       if(changed){render();recompute();}
@@ -324,34 +355,38 @@
         var notesSection=el("div","notes-section");
         notesSection.appendChild(el("div","notes-header","Notes"));
         var notesList=el("div");
-        (state[m.id].notes||[]).forEach(function(note,idx){
+        (state[m.id].notes||[]).forEach(function(noteData,idx){
           var noteItem=el("div","note-item");
-          var noteText=el("span","note-text",note);
+          var noteObj=typeof noteData==="string"?{text:noteData,owner:"",ts:""}:noteData;
+          var noteText=el("span","note-text",noteObj.text);
           var actions=el("div","note-actions");
           var editBtn=document.createElement("button");editBtn.className="note-btn";editBtn.type="button";editBtn.textContent="Edit";
           var delBtn=document.createElement("button");delBtn.className="note-btn delete";delBtn.type="button";delBtn.textContent="Delete";
           editBtn.addEventListener("click",function(e){
             e.preventDefault();
             e.stopPropagation();
-            console.log("EDIT NOTE CLICK",idx,note);
-            var newText=prompt("Edit note:",note);
+            var newText=prompt("Edit note:",noteObj.text);
             if(newText!==null){
-              console.log("EDIT SAVING:",newText);
               soundClick();
-              state[m.id].notes[idx]=newText;
+              state[m.id].notes[idx]={text:newText,owner:noteObj.owner,ts:noteObj.ts};
               render();recompute();save(true);
             }
           });
           delBtn.addEventListener("click",function(e){
             e.preventDefault();
             e.stopPropagation();
-            console.log("DELETE NOTE CLICK",idx,note);
             soundClick();
             state[m.id].notes.splice(idx,1);
             render();recompute();save(true);
           });
+          var noteContent=el("div");
+          if(noteObj.owner){
+            var ownerSpan=el("span","note-owner",noteObj.owner);
+            noteContent.appendChild(ownerSpan);
+          }
+          noteContent.appendChild(noteText);
           actions.appendChild(editBtn);actions.appendChild(delBtn);
-          noteItem.appendChild(noteText);noteItem.appendChild(actions);
+          noteItem.appendChild(noteContent);noteItem.appendChild(actions);
           notesList.appendChild(noteItem);
         });
         notesSection.appendChild(notesList);
@@ -363,7 +398,7 @@
         addBtn.addEventListener("click",function(){
           if(noteInput.value.trim()){
             soundCheckmark();
-            state[m.id].notes.push(noteInput.value);
+            state[m.id].notes.push({text:noteInput.value,owner:currentUserName||"Anonymous",ts:new Date().toISOString()});
             noteInput.value="";
             render();recompute();save(true);
           }
@@ -437,6 +472,7 @@
   function soundClick(){playTone(440,0.08,0.03);}
 
   loadState();
+  initUserName();
   render();
   recompute();
   pushToSupabase();
