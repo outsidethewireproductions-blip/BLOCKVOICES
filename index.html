@@ -291,9 +291,10 @@
           var noteItem=el("div","note-item");
           var noteText=el("span","note-text",note);
           var actions=el("div","note-actions");
-          var editBtn=el("button","note-btn","Edit");
-          var delBtn=el("button","note-btn delete","Delete");
-          editBtn.addEventListener("click",function(){
+          var editBtn=document.createElement("button");editBtn.className="note-btn";editBtn.type="button";editBtn.textContent="Edit";
+          var delBtn=document.createElement("button");delBtn.className="note-btn delete";delBtn.type="button";delBtn.textContent="Delete";
+          editBtn.addEventListener("click",function(e){
+            e.preventDefault();
             var newText=prompt("Edit note:",note);
             if(newText!==null){
               soundClick();
@@ -301,7 +302,8 @@
               render();recompute();save(true);
             }
           });
-          delBtn.addEventListener("click",function(){
+          delBtn.addEventListener("click",function(e){
+            e.preventDefault();
             soundClick();
             state[m.id].notes.splice(idx,1);
             render();recompute();save(true);
