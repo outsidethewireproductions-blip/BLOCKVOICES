@@ -13,7 +13,7 @@
     --muted:#6E6A5E; --gold:#E9BF37; --gold-d:#C99E12;
     --joint:#DAD8D0; --skylark:#A6C4F5; --skylark-tx:#1b294f;
     --teal:#15B8C4; --magenta:#C42FB2; --violet:#7B53E6; --cyan:#19C8E0;
-    --todo:#9A968A; --prog:#15B8C4; --done:var(--gold); --block:#E63946;
+    --todo:#9A968A; --prog:#15B8C4; --done:var(--gold); --block:#C42FB2;
     --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
     --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     color-scheme: light;
@@ -60,8 +60,6 @@
   .btn.ghost{color:var(--muted)}
   .saved{font-size:12px;color:var(--muted);align-self:center;margin-left:auto;font-family:var(--mono)}
   .saved b{color:var(--gold-d)}
-  .live-sync{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:#e0f7f6;border-radius:6px;font-size:11px;font-weight:600;color:var(--teal);margin-left:auto}
-  .live-sync::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--teal)}
 
   /* LEGEND */
   .legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:18px 0 24px;font-family:var(--mono);font-size:12px}
@@ -76,8 +74,8 @@
   .row{position:relative;margin:0 0 18px}
   .row::before{content:"";position:absolute;left:-41px;top:18px;width:16px;height:16px;border-radius:50%;
     background:#fff;border:4px solid var(--gold);box-shadow:0 0 0 4px #fff}
-  .row[data-completion="in-progress"]::before{border-color:#FFA500;background:#FFA500}
-  .row[data-completion="complete"]::before{background:linear-gradient(135deg,#1abf7e,#0E9F6E,#0a7a54);border-color:#0E9F6E;content:"✓";color:#fff;font-size:12px}
+  .row[data-status="in-progress"]::before{border-color:var(--teal)}
+  .row[data-status="complete"]::before{background:var(--gold);border-color:var(--gold)}
   .row[data-status="blocked"]::before{border-color:var(--magenta);background:var(--magenta)}
 
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;transition:.2s}
@@ -144,10 +142,13 @@
         <span class="pillcount todo"><b id="cTodo">0</b> To&nbsp;do</span>
         <span class="pillcount block"><b id="cBlock">0</b> Blocked</span>
       </div>
-      <span class="live-sync">Live — synced</span>
     </div>
 
     <div class="toolbar">
+      <button class="btn" id="btnExport">Export progress</button>
+      <button class="btn" id="btnImport">Import progress</button>
+      <button class="btn" id="btnShare">Copy share link</button>
+      <button class="btn ghost" id="btnReset">Reset all</button>
       <span class="saved" id="savedNote"></span>
     </div>
 
@@ -164,30 +165,26 @@
     <footer><b>Owners:</b> BlockVoices is the event; Outside The Wire Productions creates the products. Milestone dates are targets and may shift with deposit timing, speaker availability, and review turnaround. Recording must complete by June&nbsp;30; two revision rounds are included per video; final delivery lands at least two weeks before the August&nbsp;19–20 Summit. &nbsp;·&nbsp; Skylark B-roll &amp; backdrop items are provided, not billed; social promo flyers included at no extra cost.</footer>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   "use strict";
   var STORAGE_KEY="otw_blockvoices_tracker_v1";
-  var SURL="https://exjliabrkcjhwscyjgmu.supabase.co";
-  var SKEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4amxpYWJya2NqaHdzY3lqZ211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTAzOTEsImV4cCI6MjA5NzM4NjM5MX0.tt0vx8486B7Foktev4c9ndaVrAzF5510nrvw49VIMgg";
-  var sb=null;
   var OWNERS={"Outside The Wire":"o-otw","Skylark":"o-skylark","BlockVoices":"o-bv","Joint":"o-joint"};
   var MILESTONES=[
-    {id:"strategy",date:"Delivered",title:"Strategy & Creative Direction",owner:"Joint",desc:"Series framework + two production guides. Co-developed with Skylark.",def:"complete",tasks:[]},
-    {id:"kickoff",date:"Jun 16",title:"Kickoff & Deposit",owner:"Joint",desc:"Deposit received authorizes the start. Scope, speaker list, topics, and recording logistics locked with BlockVoices; project timeline (this document) shared.",def:"todo",tasks:["Deposit received","Scope locked","Recording logistics confirmed"]},
-    {id:"speaker",date:"Jun 16-22",title:"Speaker Packages (x9)",owner:"Outside The Wire",desc:"Mission/intent, details, and questions built for each of the nine speakers and sent to participants before recording.",def:"todo",tasks:["Interview questions prepared","Mission statement created","Send to participants"]},
-    {id:"recording",date:"By Jun 30",title:"Recording (Zoom)",owner:"Outside The Wire",desc:"Interviews recorded and co-conducted via Zoom; voiceover and narration recorded. 90-second answer cap; retakes allowed.",def:"todo",tasks:["Conduct 9 interviews","Record voiceover","Record narration","Retakes if needed"]},
-    {id:"editing",date:"Jul 1-14",title:"Editing & Assembly",owner:"Outside The Wire",desc:"Trim and assemble the nine sessions into clean, straight-cut topic videos.",def:"todo",tasks:["Trim sessions","Assemble videos","Quality check"]},
-    {id:"branding",date:"Jul 8-18",title:"Branding + B-Roll",owner:"Joint",desc:"Lower-thirds, titles, and BlockVoices logo applied. AI B-roll series and series backdrop integrated.",def:"todo",tasks:["Lower-thirds created","Titles created","Logo applied","8 AI B-roll videos integrated"]},
-    {id:"social",date:"Jul 15-Aug",title:"Social Promo Flyers",owner:"Outside The Wire",desc:"Social media story and post flyers promoting the video series in the run-up to the Summit, in the series branding. Included at no extra cost.",def:"todo",tasks:["Story flyers created","Post flyers created","Series branding applied"]},
-    {id:"review",date:"Jul 20-27",title:"Review & Revisions",owner:"Joint",desc:"Two review rounds per video with BlockVoices; notes incorporated.",def:"todo",tasks:["Round 1 feedback received","Round 2 feedback received","Notes incorporated"]},
-    {id:"final",date:"By Aug 5",title:"Final Delivery",owner:"Outside The Wire",desc:"Nine final edited topic videos and the social promo flyers delivered at least two weeks before the Summit. Balance due upon completion.",def:"todo",tasks:["Export videos","Deliver flyers","Invoice balance due"]},
-    {id:"summit",date:"Aug 19-20 2026",title:"BlockVoices Summit",owner:"BlockVoices",desc:"Two-day Thought Leadership Summit + Gala on Martha's Vineyard. The video series premieres at the event.",def:"todo",event:true,tasks:[]}
+    {id:"strategy",date:"Delivered",title:"Strategy & Creative Direction",owner:"Joint",desc:"Series framework + two production guides. Co-developed with Skylark.",def:"complete"},
+    {id:"kickoff",date:"Jun 16",title:"Kickoff & Deposit",owner:"Joint",desc:"Deposit received authorizes the start. Scope, speaker list, topics, and recording logistics locked with BlockVoices; project timeline (this document) shared.",def:"todo"},
+    {id:"speaker",date:"Jun 16-22",title:"Speaker Packages (x9)",owner:"Outside The Wire",desc:"Mission/intent, details, and questions built for each of the nine speakers and sent to participants before recording.",def:"todo"},
+    {id:"recording",date:"By Jun 30",title:"Recording",owner:"Outside The Wire",desc:"Interviews recorded and co-conducted via OBS; voiceover and narration recorded. 90-second answer cap; retakes allowed.",def:"todo"},
+    {id:"editing",date:"Jul 1-14",title:"Editing & Assembly",owner:"Outside The Wire",desc:"Trim and assemble the nine sessions into clean, straight-cut topic videos.",def:"todo"},
+    {id:"branding",date:"Jul 8-18",title:"Branding + B-Roll",owner:"Skylark",desc:"Lower-thirds, titles, and BlockVoices logo applied. Skylark AI B-roll series and series backdrop integrated. (Skylark items provided, not billed.)",def:"todo"},
+    {id:"social",date:"Jul 15-Aug",title:"Social Promo Flyers",owner:"Outside The Wire",desc:"Social media story and post flyers promoting the video series in the run-up to the Summit, in the series branding. Included at no extra cost.",def:"todo"},
+    {id:"review",date:"Jul 20-27",title:"Review & Revisions",owner:"Joint",desc:"Two review rounds per video with BlockVoices; notes incorporated.",def:"todo"},
+    {id:"final",date:"By Aug 5",title:"Final Delivery",owner:"Outside The Wire",desc:"Nine final edited topic videos and the social promo flyers delivered at least two weeks before the Summit. Balance due upon completion.",def:"todo"},
+    {id:"summit",date:"Aug 19-20 2026",title:"BlockVoices Summit",owner:"BlockVoices",desc:"Two-day Thought Leadership Summit + Gala on Martha's Vineyard. The video series premieres at the event.",def:"todo",event:true}
   ];
   var STATUSES=[{s:"todo",label:"To Do"},{s:"in-progress",label:"In Progress"},{s:"complete",label:"Done"},{s:"blocked",label:"Blocked"}];
   var state={};
-  function defaults(){var d={};MILESTONES.forEach(function(m){d[m.id]={status:m.def||"todo",note:"",tasks:{}};if(m.tasks){m.tasks.forEach(function(t,i){d[m.id].tasks[i]=false;});}});return d;}
+  function defaults(){var d={};MILESTONES.forEach(function(m){d[m.id]={status:m.def||"todo",note:""};});return d;}
   function gLS(){try{return localStorage.getItem(STORAGE_KEY);}catch(e){return null;}}
   function sLS(v){try{localStorage.setItem(STORAGE_KEY,v);return true;}catch(e){return false;}}
   function loadState(){
@@ -195,26 +192,16 @@
     var raw=gLS();
     var hash=location.hash&&location.hash.indexOf("#data=")===0?decodeURIComponent(location.hash.slice(6)):null;
     var source=hash||raw;
-    if(source){try{var o=JSON.parse(source);Object.keys(o).forEach(function(id){if(state[id]){if(o[id]&&typeof o[id].status==="string")state[id].status=o[id].status;if(o[id]&&typeof o[id].note==="string")state[id].note=o[id].note;if(o[id]&&typeof o[id].tasks==="object")state[id].tasks=o[id].tasks;}});}catch(e){}}
+    if(source){try{var o=JSON.parse(source);Object.keys(o).forEach(function(id){if(state[id]){if(o[id]&&typeof o[id].status==="string")state[id].status=o[id].status;if(o[id]&&typeof o[id].note==="string")state[id].note=o[id].note;}});}catch(e){}}
     if(hash)sLS(JSON.stringify(state));
   }
-  function save(flash){var ok=sLS(JSON.stringify(state));if(sb){MILESTONES.forEach(function(m){sb.from("tracker").upsert({id:m.id,status:state[m.id].status,note:state[m.id].note,tasks:JSON.stringify(state[m.id].tasks),updated_at:new Date().toISOString()}).catch(function(){});});} var n=document.getElementById("savedNote");if(flash){n.innerHTML=ok?"✓ <b>Saved</b>":"⚠ Couldn't save";clearTimeout(save._t);save._t=setTimeout(function(){n.textContent="";},2200);}}
+  function save(flash){var ok=sLS(JSON.stringify(state));var n=document.getElementById("savedNote");if(flash){n.innerHTML=ok?"✓ <b>Saved</b> in this browser":"⚠ Couldn't save (storage blocked) — use Export";clearTimeout(save._t);save._t=setTimeout(function(){n.textContent="";},2200);}}
   function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;}
-  function getCompletion(m){
-    if(!m.tasks||!m.tasks.length)return "todo";
-    var total=m.tasks.length;
-    var checked=0;
-    Object.keys(state[m.id].tasks).forEach(function(i){if(state[m.id].tasks[i])checked++;});
-    if(checked===total)return "complete";
-    if(checked>0)return "in-progress";
-    return "todo";
-  }
   function render(){
     var tl=document.getElementById("timeline");tl.innerHTML="";
     MILESTONES.forEach(function(m){
       var st=state[m.id].status;
-      var comp=getCompletion(m);
-      var row=el("div","row");row.setAttribute("data-status",st);row.setAttribute("data-completion",comp);
+      var row=el("div","row");row.setAttribute("data-status",st);
       var card=el("div","card");
       var top=el("div","card-top");
       top.appendChild(el("span","date",m.date));
@@ -222,26 +209,6 @@
       top.appendChild(el("span","ownpill "+(OWNERS[m.owner]||""),m.owner));
       card.appendChild(top);
       card.appendChild(el("p","desc-line",m.desc));
-      if(m.tasks&&m.tasks.length){
-        var tasksDiv=el("div","tasks");
-        var taskToggle=el("button",null,"▾ Tasks ("+m.tasks.length+")");
-        taskToggle.style.cssText="background:transparent;border:1px solid var(--line);padding:6px 12px;border-radius:6px;cursor:pointer;font-family:var(--mono);font-size:12px;margin:10px 0;width:100%;text-align:left;";
-        var taskList=el("div");
-        taskList.style.display="none";
-        m.tasks.forEach(function(t,i){
-          var item=el("div");
-          item.style.cssText="display:flex;align-items:center;gap:8px;margin:8px 0;";
-          var chk=document.createElement("input");
-          chk.type="checkbox";chk.id=m.id+"_t"+i;chk.checked=state[m.id].tasks[i]||false;
-          chk.addEventListener("change",function(){state[m.id].tasks[i]=chk.checked;save(true);});
-          var lab=el("label",null,t);lab.setAttribute("for",chk.id);lab.style.cursor="pointer";lab.style.flex="1";
-          item.appendChild(chk);item.appendChild(lab);
-          taskList.appendChild(item);
-        });
-        taskToggle.addEventListener("click",function(){var show=taskList.style.display==="none";taskList.style.display=show?"block":"none";taskToggle.textContent=(show?"▾":"▸")+" Tasks ("+m.tasks.length+")";});
-        tasksDiv.appendChild(taskToggle);tasksDiv.appendChild(taskList);
-        card.appendChild(tasksDiv);
-      }
       var controls=el("div","controls");
       var seg=el("div","seg");
       STATUSES.forEach(function(opt){
@@ -275,13 +242,14 @@
     document.getElementById("cBlock").textContent=block;
   }
   function exportProgress(){var data=JSON.stringify(state,null,2);var blob=new Blob([data],{type:"application/json"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download="blockvoices-progress.json";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}
-  function importProgress(){var inp=document.createElement("input");inp.type="file";inp.accept="application/json,.json";inp.addEventListener("change",function(){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);Object.keys(o).forEach(function(id){if(state[id]){if(typeof o[id].status==="string")state[id].status=o[id].status;if(typeof o[id].note==="string")state[id].note=o[id].note;if(typeof o[id].tasks==="object")state[id].tasks=o[id].tasks;}});render();recompute();save(true);}catch(e){alert("That file didn't look like a valid progress export.");}};r.readAsText(f);});inp.click();}
+  function importProgress(){var inp=document.createElement("input");inp.type="file";inp.accept="application/json,.json";inp.addEventListener("change",function(){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);Object.keys(o).forEach(function(id){if(state[id]){if(typeof o[id].status==="string")state[id].status=o[id].status;if(typeof o[id].note==="string")state[id].note=o[id].note;}});render();recompute();save(true);}catch(e){alert("That file didn't look like a valid progress export.");}};r.readAsText(f);});inp.click();}
   function copyShareLink(){var url=location.origin+location.pathname+"#data="+encodeURIComponent(JSON.stringify(state));function done(ok){var n=document.getElementById("savedNote");n.innerHTML=ok?"✓ <b>Link copied</b> — paste to share current status":"Link is in the address bar";clearTimeout(copyShareLink._t);copyShareLink._t=setTimeout(function(){n.textContent="";},2600);}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){done(true);},function(){location.hash="data="+encodeURIComponent(JSON.stringify(state));done(false);});}else{location.hash="data="+encodeURIComponent(JSON.stringify(state));done(false);}}
   function resetAll(){if(!confirm("Reset every phase back to its starting status and clear all notes?"))return;state=defaults();render();recompute();save(true);if(location.hash)history.replaceState(null,"",location.pathname);}
-  function syncFromDb(){if(!sb)return;sb.from("tracker").select("*").then(function(r){if(r.data){r.data.forEach(function(row){if(state[row.id]){state[row.id].status=row.status||state[row.id].status;state[row.id].note=row.note||state[row.id].note;if(row.tasks){try{state[row.id].tasks=JSON.parse(row.tasks);}catch(e){}}}});render();recompute();}}).catch(function(){});}
   loadState();render();recompute();
-  sb=supabase.createClient(SURL,SKEY);
-  setInterval(syncFromDb,2000);
+  document.getElementById("btnExport").addEventListener("click",exportProgress);
+  document.getElementById("btnImport").addEventListener("click",importProgress);
+  document.getElementById("btnShare").addEventListener("click",copyShareLink);
+  document.getElementById("btnReset").addEventListener("click",resetAll);
 })();
 </script>
 </body>
