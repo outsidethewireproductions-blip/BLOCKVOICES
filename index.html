@@ -52,7 +52,7 @@
   .pillcount{font-family:var(--mono);font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:#fff;letter-spacing:.02em}
   .pillcount b{font-weight:700}
   .pillcount.done{color:var(--gold-d)} .pillcount.prog{color:#0b8b95} .pillcount.todo{color:var(--muted)} .pillcount.block{color:var(--block)}
-  
+
   .sync-indicator{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--teal);letter-spacing:.02em;text-transform:uppercase}
   .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -74,13 +74,13 @@
   .row[data-status="complete"] .dot{background:linear-gradient(135deg,#1abf7e,#0E9F6E,#0a7a54);border:1px solid #0a7a54;color:var(--paper)}
   .row[data-status="blocked"] .dot{background:var(--block);border:1px solid var(--block);color:var(--paper)}
   .row[data-status="blocked"]::before{content:"";position:absolute;left:-20px;top:0;bottom:0;width:4px;background:var(--block)}
-  
+
   .row .card{flex:1}
   .row .card h3{margin:0 0 4px;font-size:16px;font-weight:600;color:var(--ink)}
   .row .card .meta{display:flex;gap:16px;margin:2px 0 12px;font-size:11px;color:var(--muted);letter-spacing:.02em;text-transform:uppercase}
   .row .card .meta b{font-weight:700;color:var(--ink);text-transform:none}
   .row .card > p{margin:0 0 8px;font-size:13px;color:#33302a;line-height:1.5}
-  
+
   .row .statuses{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}
   .statusbtn{font-family:var(--mono);font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.15s;text-transform:uppercase;letter-spacing:.02em}
   .statusbtn:hover{border-color:var(--gold-d);background:#fffdf3}
@@ -89,14 +89,14 @@
   .statusbtn.active.in-progress{background:#fff;color:var(--prog);border:1px solid var(--prog)}
   .statusbtn.active.complete{background:#fff;color:var(--gold-d);border:1px solid var(--gold-d)}
   .statusbtn.active.blocked{background:#fff;color:var(--block);border:1px solid var(--block)}
-  
+
   .tasks-toggle{font-family:var(--mono);font-size:12px;font-weight:600;background:none;border:none;color:var(--teal);cursor:pointer;padding:0;text-align:left;display:flex;align-items:center;gap:4px}
   .tasks-toggle:hover{text-decoration:underline}
   .tasks-list{margin:12px 0 0 0;padding:0;list-style:none;background:#f9f8f5;border-radius:6px;border:1px solid var(--line);padding:10px;display:none}
   .tasks-list.visible{display:block}
   .tasks-list li{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px;color:#33302a}
   .tasks-list input[type="checkbox"]{cursor:pointer}
-  
+
   .notebox{margin:10px 0 0;padding:8px 12px;background:#fffdf3;border:1px solid var(--line);border-radius:6px}
   .notebox label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin:0 0 4px;letter-spacing:.02em}
   .notebox textarea{font-family:var(--mono);width:100%;border:none;background:transparent;color:var(--ink);font-size:12px;resize:vertical;min-height:40px;outline:none}
@@ -155,6 +155,7 @@
   var SUPABASE_URL="https://exjliabrkcjhwscyjgmu.supabase.co";
   var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4amxpYWJya2NqaHdzY3lqZ211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTAzOTEsImV4cCI6MjA5NzM4NjM5MX0.tt0vx8486B7Foktev4c9ndaVrAzF5510nrvw49VIMgg";
   var supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
   var MILESTONES=[
     {id:"kickoff",date:"Jun 16",title:"Kickoff & Deposit",owner:"Joint",desc:"Deposit received authorizes the start. Scope, speaker list, topics, and recording logistics locked with BlockVoices; project timeline (this document) shared.",tasks:["Deposit received","Scope locked","Recording logistics confirmed"],def:"todo"},
     {id:"speaker",date:"Jun 16-22",title:"Speaker Packages (x9)",owner:"Outside The Wire",desc:"Mission/intent, details, and questions built for each of the nine speakers and sent to participants before recording.",tasks:["Interview questions prepared","Mission statement created","Send to participants"],def:"todo"},
@@ -166,25 +167,91 @@
     {id:"final",date:"By Aug 5",title:"Final Delivery",owner:"Outside The Wire",desc:"Nine final edited topic videos and the social promo flyers delivered at least two weeks before the Summit. Balance due upon completion.",tasks:["Export videos","Deliver flyers","Invoice balance due"],def:"todo"},
     {id:"summit",date:"Aug 19-20 2026",title:"BlockVoices Summit",owner:"BlockVoices",desc:"Two-day Thought Leadership Summit + Gala on Martha's Vineyard. The video series premieres at the event.",def:"todo",event:true}
   ];
-  var STATUSES=[{s:"todo",label:"To Do"},{s:"in-progress",label:"In Progress"},{s:"complete",label:"Done"},{s:"blocked",label:"Blocked"}];
-  var state={};
-  var syncInProgress=false;
-  var lastRemoteUpdate={};
 
-  function defaults(){var d={};MILESTONES.forEach(function(m){var tasks={};if(m.tasks){for(var i=0;i<m.tasks.length;i++)tasks[i]=false;}d[m.id]={status:m.def||"todo",note:"",tasks:tasks};});return d;}
+  var STATUSES=[{s:"todo",label:"To Do"},{s:"in-progress",label:"In Progress"},{s:"complete",label:"Done"},{s:"blocked",label:"Blocked"}];
+
+  var state={};
+  var syncQueue={};
+  var inFlight={};
+
+  function defaults(){
+    var d={};
+    MILESTONES.forEach(function(m){
+      var tasks={};
+      if(m.tasks){
+        for(var i=0;i<m.tasks.length;i++)tasks[i]=false;
+      }
+      d[m.id]={status:m.def||"todo",note:"",tasks:tasks};
+    });
+    return d;
+  }
+
   function gLS(){try{return localStorage.getItem(STORAGE_KEY);}catch(e){return null;}}
   function sLS(v){try{localStorage.setItem(STORAGE_KEY,v);return true;}catch(e){return false;}}
-  
-  function loadState(){state=defaults();var source=gLS();if(source){try{var o=JSON.parse(source);Object.keys(o).forEach(function(id){if(state[id]){if(o[id]&&typeof o[id].status==="string")state[id].status=o[id].status;if(o[id]&&typeof o[id].note==="string")state[id].note=o[id].note;if(o[id]&&typeof o[id].tasks==="object")state[id].tasks=Object.assign({},state[id].tasks,o[id].tasks);}});}catch(e){}}
+
+  function loadState(){
+    state=defaults();
+    var source=gLS();
+    if(source){
+      try{
+        var o=JSON.parse(source);
+        Object.keys(o).forEach(function(id){
+          if(state[id]){
+            if(o[id]&&typeof o[id].status==="string")state[id].status=o[id].status;
+            if(o[id]&&typeof o[id].note==="string")state[id].note=o[id].note;
+            if(o[id]&&typeof o[id].tasks==="object")state[id].tasks=Object.assign({},state[id].tasks,o[id].tasks);
+          }
+        });
+      }catch(e){}
+    }
   }
-  
-  function saveLocal(){return sLS(JSON.stringify(state));}
-  
-  function saveToSupabase(){
-    if(syncInProgress)return Promise.resolve();
-    syncInProgress=true;
-    var promises=[];
-    for(var mid in state){
+
+  function saveLocal(){
+    return sLS(JSON.stringify(state));
+  }
+
+  function el(t,c,h){
+    var e=document.createElement(t);
+    if(c)e.className=c;
+    if(h!=null)e.innerHTML=h;
+    return e;
+  }
+
+  function showSaved(msg){
+    var n=document.getElementById("savedNote");
+    n.textContent=msg;
+    clearTimeout(showSaved._t);
+    showSaved._t=setTimeout(function(){n.textContent="";},2200);
+  }
+
+  function updateStateAndRender(mId,key,value){
+    if(state[mId]){
+      state[mId][key]=value;
+      saveLocal();
+      syncQueue[mId]=true;
+      render();
+      recompute();
+      scheduleSave();
+    }
+  }
+
+  function scheduleSave(){
+    if(scheduleSave._pending)return;
+    scheduleSave._pending=true;
+    setTimeout(function(){
+      scheduleSave._pending=false;
+      sendQueuedUpdates();
+    },300);
+  }
+
+  function sendQueuedUpdates(){
+    var mIds=Object.keys(syncQueue);
+    if(mIds.length===0)return;
+
+    mIds.forEach(function(mid){
+      if(inFlight[mid])return;
+      inFlight[mid]=true;
+
       var ms=state[mid];
       var row={
         id:mid,
@@ -193,145 +260,60 @@
         tasks:ms.tasks,
         updated_at:new Date().toISOString()
       };
-      promises.push(supabase.from("tracker").upsert([row]).then(function(){syncInProgress=false;}).catch(function(e){console.error("Save error:",e);syncInProgress=false;}));
-    }
-    return Promise.all(promises);
+
+      supabase.from("tracker").upsert([row]).then(function(){
+        delete inFlight[mid];
+      }).catch(function(e){
+        console.error("Save error for "+mid+":",e);
+        delete inFlight[mid];
+      });
+
+      delete syncQueue[mid];
+    });
   }
-  
+
   function pullFromSupabase(){
     return supabase.from("tracker").select("*").then(function(result){
-      if(result.error){console.error("Pull error:",result.error);return;}
+      if(result.error){console.error("Pull error:",result.error);return false;}
       var data=result.data||[];
+      var changed=false;
+
       for(var i=0;i<data.length;i++){
         var row=data[i];
         if(!state[row.id])continue;
-        var remote={status:row.status,note:row.note,tasks:row.tasks};
-        lastRemoteUpdate[row.id]=JSON.stringify(remote);
-        if(row.status!==state[row.id].status){state[row.id].status=row.status;}
-        if(row.note!==state[row.id].note){state[row.id].note=row.note;}
-        if(row.tasks&&typeof row.tasks==="object"){state[row.id].tasks=Object.assign({},state[row.id].tasks,row.tasks);}
-      }
-    }).catch(function(e){console.error("Pull failed:",e);});
-  }
-  
-  function save(flash){
-    var ok=saveLocal();
-    if(flash){
-      var n=document.getElementById("savedNote");
-      n.innerHTML=ok?"✓ <b>Syncing</b> now":"⚠ Local saved";
-      clearTimeout(save._t);
-      save._t=setTimeout(function(){n.textContent="";},2200);
-    }
-    saveToSupabase();
-  }
-  
-  function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;}
-  
-  function render(){
-    var timeline=document.getElementById("timeline");
-    timeline.innerHTML="";
-    MILESTONES.forEach(function(m){
-      var s=state[m.id].status;
-      var row=el("div","row");
-      row.setAttribute("data-status",s);
-      if(m.event)row.className+=" event";
-      
-      var dot=el("div","dot");
-      if(s==="complete"){
-        var allChecked=true;
-        if(m.tasks){for(var ti in state[m.id].tasks){if(!state[m.id].tasks[ti]){allChecked=false;break;}}}
-        if(allChecked&&m.tasks){dot.innerHTML="✓";}else{dot.innerHTML="●";dot.style.color="var(--paper)";}
-      }
-      row.appendChild(dot);
-      
-      var card=el("div","card");
-      var title=el("h3",null,m.title);
-      card.appendChild(title);
-      
-      var meta=el("div","meta");
-      meta.innerHTML="<b>"+m.date+"</b> · <b>"+m.owner+"</b>";
-      card.appendChild(meta);
-      
-      var desc=el("p",null,m.desc);
-      card.appendChild(desc);
-      
-      if(!m.event){
-        var statuses=el("div","statuses");
-        STATUSES.forEach(function(opt){
-          var b=el("button","statusbtn "+opt.s);
-          b.textContent=opt.label;
-          if(opt.s===s)b.className+=" active";
-          b.addEventListener("click",function(){
-            state[m.id].status=opt.s;
-            render();
-            recompute();
-            save(true);
-          });
-          statuses.appendChild(b);
-        });
-        card.appendChild(statuses);
-        
-        if(m.tasks&&m.tasks.length>0){
-          var taskBtn=el("button","tasks-toggle");
-          var checkedCount=0;
-          for(var ti in state[m.id].tasks){if(state[m.id].tasks[ti])checkedCount++;}
-          taskBtn.innerHTML="▾ Tasks ("+checkedCount+"/"+m.tasks.length+")";
-          
-          var taskList=el("ul","tasks-list");
-          var showTasks=false;
-          taskBtn.addEventListener("click",function(){
-            showTasks=!showTasks;
-            if(showTasks)taskList.className="tasks-list visible";
-            else taskList.className="tasks-list";
-          });
-          
-          m.tasks.forEach(function(task,idx){
-            var li=document.createElement("li");
-            var checkbox=document.createElement("input");
-            checkbox.type="checkbox";
-            checkbox.checked=state[m.id].tasks[idx]||false;
-            checkbox.addEventListener("change",function(){
-              state[m.id].tasks[idx]=checkbox.checked;
-              render();
-              recompute();
-              save(true);
-            });
-            var label=document.createElement("label");
-            label.style.margin="0";
-            label.textContent=task;
-            li.appendChild(checkbox);
-            li.appendChild(label);
-            taskList.appendChild(li);
-          });
-          
-          card.appendChild(taskBtn);
-          card.appendChild(taskList);
+
+        var needsUpdate=false;
+        if(row.status&&row.status!==state[row.id].status){
+          state[row.id].status=row.status;
+          needsUpdate=true;
         }
-        
-        var notebox=el("div","notebox");
-        notebox.innerHTML="<label>Notes</label>";
-        var note=document.createElement("textarea");
-        note.placeholder="Add notes here...";
-        note.value=state[m.id].note;
-        notebox.appendChild(note);
-        card.appendChild(notebox);
-        note.addEventListener("input",function(){
-          state[m.id].note=note.value;
-          save(false);
-        });
-        note.addEventListener("change",function(){
-          save(true);
-        });
+        if(row.note!==undefined&&row.note!==state[row.id].note){
+          state[row.id].note=row.note;
+          needsUpdate=true;
+        }
+        if(row.tasks&&typeof row.tasks==="object"){
+          var remote=row.tasks;
+          var local=state[row.id].tasks;
+          for(var k in remote){
+            if(local[k]!==remote[k]){
+              local[k]=remote[k];
+              needsUpdate=true;
+            }
+          }
+        }
+
+        if(needsUpdate)changed=true;
       }
-      
-      row.appendChild(card);
-      timeline.appendChild(row);
+
+      return changed;
+    }).catch(function(e){
+      console.error("Pull failed:",e);
+      return false;
     });
   }
-  
+
   function recompute(){
     var deliv=MILESTONES.filter(function(m){return !m.event;});
-    var total=deliv.length;
     var done=0,prog=0,todo=0,block=0;
     MILESTONES.forEach(function(m){
       var s=state[m.id].status;
@@ -349,14 +331,155 @@
     document.getElementById("countTodo").textContent=todo;
     document.getElementById("countBlock").textContent=block;
   }
-  
-  function syncPoll(){
-    pullFromSupabase().then(function(){
-      render();
-      recompute();
+
+  function render(){
+    var timeline=document.getElementById("timeline");
+    timeline.innerHTML="";
+
+    MILESTONES.forEach(function(m){
+      var s=state[m.id].status;
+      var row=el("div","row");
+      row.setAttribute("data-status",s);
+      if(m.event)row.className+=" event";
+
+      var dot=el("div","dot");
+      if(s==="complete"){
+        var allChecked=true;
+        if(m.tasks){
+          for(var ti in state[m.id].tasks){
+            if(!state[m.id].tasks[ti]){
+              allChecked=false;
+              break;
+            }
+          }
+        }
+        if(allChecked&&m.tasks){
+          dot.innerHTML="✓";
+        }else{
+          dot.innerHTML="●";
+          dot.style.color="var(--paper)";
+        }
+      }
+      row.appendChild(dot);
+
+      var card=el("div","card");
+      var title=el("h3",null,m.title);
+      card.appendChild(title);
+
+      var meta=el("div","meta");
+      meta.innerHTML="<b>"+m.date+"</b> · <b>"+m.owner+"</b>";
+      card.appendChild(meta);
+
+      var desc=el("p",null,m.desc);
+      card.appendChild(desc);
+
+      if(!m.event){
+        var statuses=el("div","statuses");
+        STATUSES.forEach(function(opt){
+          var b=el("button","statusbtn "+opt.s);
+          b.textContent=opt.label;
+          b.setAttribute("data-milestone",m.id);
+          b.setAttribute("data-status",opt.s);
+          if(opt.s===s)b.className+=" active";
+
+          b.addEventListener("click",function(e){
+            e.preventDefault();
+            var mid=e.target.getAttribute("data-milestone");
+            var newStatus=e.target.getAttribute("data-status");
+            updateStateAndRender(mid,"status",newStatus);
+            showSaved("✓ Status updated");
+          });
+
+          statuses.appendChild(b);
+        });
+        card.appendChild(statuses);
+
+        if(m.tasks&&m.tasks.length>0){
+          var taskBtn=el("button","tasks-toggle");
+          var checkedCount=0;
+          for(var ti in state[m.id].tasks){
+            if(state[m.id].tasks[ti])checkedCount++;
+          }
+          taskBtn.innerHTML="▾ Tasks ("+checkedCount+"/"+m.tasks.length+")";
+          taskBtn.setAttribute("data-milestone",m.id);
+
+          var taskList=el("ul","tasks-list visible");
+          var showTasks=true;
+
+          taskBtn.addEventListener("click",function(e){
+            e.preventDefault();
+            showTasks=!showTasks;
+            if(showTasks)taskList.className="tasks-list visible";
+            else taskList.className="tasks-list";
+          });
+
+          m.tasks.forEach(function(task,idx){
+            var li=document.createElement("li");
+            var checkbox=document.createElement("input");
+            checkbox.type="checkbox";
+            checkbox.setAttribute("data-milestone",m.id);
+            checkbox.setAttribute("data-task-idx",idx);
+            checkbox.checked=state[m.id].tasks[idx]||false;
+
+            checkbox.addEventListener("change",function(e){
+              var mid=e.target.getAttribute("data-milestone");
+              var tidx=parseInt(e.target.getAttribute("data-task-idx"),10);
+              var newTasks=Object.assign({},state[mid].tasks);
+              newTasks[tidx]=e.target.checked;
+              updateStateAndRender(mid,"tasks",newTasks);
+              showSaved("✓ Task updated");
+            });
+
+            var label=document.createElement("label");
+            label.style.margin="0";
+            label.textContent=task;
+            li.appendChild(checkbox);
+            li.appendChild(label);
+            taskList.appendChild(li);
+          });
+
+          card.appendChild(taskBtn);
+          card.appendChild(taskList);
+        }
+
+        var notebox=el("div","notebox");
+        notebox.innerHTML="<label>Notes</label>";
+        var note=document.createElement("textarea");
+        note.placeholder="Add notes here...";
+        note.setAttribute("data-milestone",m.id);
+        note.value=state[m.id].note;
+        notebox.appendChild(note);
+        card.appendChild(notebox);
+
+        note.addEventListener("blur",function(e){
+          var mid=e.target.getAttribute("data-milestone");
+          updateStateAndRender(mid,"note",e.target.value);
+          showSaved("✓ Note saved");
+        });
+
+        note.addEventListener("input",function(e){
+          var mid=e.target.getAttribute("data-milestone");
+          state[mid].note=e.target.value;
+          saveLocal();
+          syncQueue[mid]=true;
+          scheduleSave();
+        });
+      }
+
+      row.appendChild(card);
+      timeline.appendChild(row);
     });
   }
-  
+
+  function syncPoll(){
+    pullFromSupabase().then(function(changed){
+      if(changed){
+        render();
+        recompute();
+      }
+    });
+  }
+
   function init(){
     loadState();
     pullFromSupabase().then(function(){
@@ -365,7 +488,7 @@
       setInterval(syncPoll,1500);
     });
   }
-  
+
   init();
 })();
   </script>
