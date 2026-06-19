@@ -232,6 +232,7 @@
     }
   }
 
+  var lastLocalChange={};
   var currentUserName="";
 
   function initUserName(){
@@ -249,6 +250,7 @@
 
   function save(flash){
     var ok=sLS(JSON.stringify(state));
+    Object.keys(state).forEach(function(mid){lastLocalChange[mid]=Date.now();});
     if(flash){
       var n=document.getElementById("savedNote");
       n.innerHTML="✓ <b>Syncing…</b>";
@@ -261,15 +263,20 @@
   function pushToSupabase(){
     var rows=[];
     Object.keys(state).forEach(function(mid){
+      var t=state[mid].tasks||[];
       rows.push({
         id:mid,
         status:state[mid].status,
         note:JSON.stringify(state[mid].notes||[]),
-        tasks:state[mid].tasks||[],
+        tasks:t,
         updated_at:new Date().toISOString()
       });
     });
-    supabase.from("tracker").upsert(rows).catch(function(e){});
+    var hasTasks=rows.some(function(r){return r.tasks.length>0;});
+    if(hasTasks)console.log("PUSH tasks:",rows.map(function(r){return r.id+":"+JSON.stringify(r.tasks);}).filter(function(s){return s.indexOf("[")>0;}).join(" "));
+    supabase.from("tracker").upsert(rows).then(function(r){
+      if(r.error)console.error("PUSH ERROR:",r.error);
+    }).catch(function(e){});
   }
 
   function pullFromSupabase(){
@@ -277,8 +284,10 @@
       if(result.error){return;}
       var data=result.data||[];
       var changed=false;
+      var taskUpdates=[];
       data.forEach(function(row){
-        if(state[row.id]){
+        var timeSinceLocalUpdate=Date.now()-(lastLocalChange[row.id]||0);
+        if(state[row.id]&&timeSinceLocalUpdate>1500){
           if(state[row.id].status!==row.status){
             state[row.id].status=row.status;changed=true;
           }
@@ -292,12 +301,16 @@
             state[row.id].notes=remoteNotes;changed=true;
           }
           if(Array.isArray(row.tasks)){
-            if(JSON.stringify(state[row.id].tasks||[])!==JSON.stringify(row.tasks)){
+            var localStr=JSON.stringify(state[row.id].tasks||[]);
+            var remoteStr=JSON.stringify(row.tasks);
+            if(localStr!==remoteStr){
+              taskUpdates.push(row.id+": "+localStr+"→"+remoteStr);
               state[row.id].tasks=row.tasks;changed=true;
             }
           }
         }
       });
+      if(taskUpdates.length>0)console.log("PULL tasks:",taskUpdates.join(" "));
       if(changed){render();recompute();}
     });
   }
@@ -408,6 +421,7 @@
             cb.addEventListener("change",function(){
               soundClick();
               state[m.id].tasks[idx]=cb.checked;
+              console.log("TASK:",m.id,"["+idx+"]=",cb.checked,"→",JSON.stringify(state[m.id].tasks));
               if(cb.checked)soundCheckmark();
               recompute();
               save(true);
