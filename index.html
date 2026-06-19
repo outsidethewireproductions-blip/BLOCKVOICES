@@ -233,6 +233,7 @@
   }
 
   var currentUserName="";
+  var lastChange={};
 
   function initUserName(){
     var stored=localStorage.getItem("blockvoices_userName")||"";
@@ -249,6 +250,7 @@
 
   function save(flash){
     var ok=sLS(JSON.stringify(state));
+    Object.keys(state).forEach(function(m){lastChange[m]=Date.now();});
     if(flash){
       var n=document.getElementById("savedNote");
       n.innerHTML="✓ <b>Syncing…</b>";
@@ -279,13 +281,14 @@
       var data=result.data||[];
       var changed=false;
       data.forEach(function(row){
+        var age=Date.now()-(lastChange[row.id]||0);
         if(state[row.id]){
-          if(state[row.id].status!==row.status){
+          if(age>1000&&state[row.id].status!==row.status){
             state[row.id].status=row.status;changed=true;
           }
           var notes=[];
           try{if(row.note&&typeof row.note==="string")notes=JSON.parse(row.note);}catch(e){}
-          if(JSON.stringify(state[row.id].notes||[])!==JSON.stringify(notes)){
+          if(age>1000&&JSON.stringify(state[row.id].notes||[])!==JSON.stringify(notes)){
             state[row.id].notes=notes;changed=true;
           }
           var tasks=Array.isArray(row.tasks)?row.tasks:[];
