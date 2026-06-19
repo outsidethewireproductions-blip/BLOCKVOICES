@@ -255,13 +255,21 @@
     Object.keys(state).forEach(function(mid){
       rows.push({id:mid,status:state[mid].status,note:state[mid].note,tasks:{},updated_at:new Date().toISOString()});
     });
-    supabase.from("tracker").upsert(rows).catch(function(e){console.error("Push:",e);});
+    console.log("PUSH to Supabase:",rows);
+    supabase.from("tracker").upsert(rows).then(function(result){
+      console.log("PUSH success:",result);
+    }).catch(function(e){
+      console.error("PUSH ERROR:",e);
+    });
   }
 
   function pullFromSupabase(){
+    console.log("PULL from Supabase...");
     supabase.from("tracker").select("*").then(function(result){
-      if(result.error){console.error("Pull:",result.error);return;}
+      console.log("PULL result:",result);
+      if(result.error){console.error("PULL error:",result.error);return;}
       var data=result.data||[];
+      console.log("PULL data:",data);
       var changed=false;
       data.forEach(function(row){
         if(state[row.id]){
@@ -269,8 +277,11 @@
           if(state[row.id].note!==row.note){state[row.id].note=row.note;changed=true;}
         }
       });
-      if(changed){render();recompute();}
-    }).catch(function(e){console.error("Pull failed:",e);});
+      if(changed){console.log("PULL: changes detected, re-rendering");render();recompute();}
+      else{console.log("PULL: no changes");}
+    }).catch(function(e){
+      console.error("PULL exception:",e);
+    });
   }
 
   loadState();
@@ -284,23 +295,35 @@
   pullFromSupabase();
 
   // Real-time sync via Supabase WebSocket
+  console.log("Setting up realtime subscription...");
   supabase.channel('public:tracker').on('postgres_changes',{event:'*',schema:'public',table:'tracker'},function(payload){
-    console.log('Real-time update:',payload);
+    console.log('REALTIME EVENT:',payload);
     if(payload.new){
       var row=payload.new;
+      console.log('Received update for:',row.id);
       if(state[row.id]){
         var changed=false;
-        if(state[row.id].status!==row.status){state[row.id].status=row.status;changed=true;}
-        if(state[row.id].note!==row.note){state[row.id].note=row.note;changed=true;}
+        if(state[row.id].status!==row.status){
+          console.log('Status changed for '+row.id+': '+state[row.id].status+' -> '+row.status);
+          state[row.id].status=row.status;
+          changed=true;
+        }
+        if(state[row.id].note!==row.note){
+          console.log('Note changed for '+row.id);
+          state[row.id].note=row.note;
+          changed=true;
+        }
         if(changed){
+          console.log('RE-RENDERING after realtime update');
           render();
           recompute();
-          console.log('Live update rendered for '+row.id);
         }
+      }else{
+        console.log('State for '+row.id+' not found');
       }
     }
   }).subscribe(function(status){
-    console.log('Realtime subscription status:',status);
+    console.log('REALTIME STATUS:',status);
   });
 
   // Fallback poll every 3 seconds for safety
