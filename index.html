@@ -249,9 +249,7 @@
   }
 
   function save(flash){
-    lastLocalChange=Date.now();
     var ok=sLS(JSON.stringify(state));
-    console.log("SAVE:",ok?"localStorage OK":"localStorage FAILED",JSON.stringify(state).length,"bytes");
     if(flash){
       var n=document.getElementById("savedNote");
       n.innerHTML="✓ <b>Syncing…</b>";
@@ -264,42 +262,25 @@
   function pushToSupabase(){
     var rows=[];
     Object.keys(state).forEach(function(mid){
-      var tasks=state[mid].tasks||{};
       rows.push({
         id:mid,
         status:state[mid].status,
         note:JSON.stringify(state[mid].notes||[]),
-        tasks:tasks,
+        tasks:state[mid].tasks||{},
         updated_at:new Date().toISOString()
       });
     });
-    var summary=rows.map(function(r){
-      var taskStr=Object.keys(r.tasks).length>0?"tasks:"+JSON.stringify(r.tasks):"";
-      return r.id+":"+r.status+(taskStr?","+taskStr:"");
-    }).join(" | ");
-    console.log("PUSH:",summary);
-    supabase.from("tracker").upsert(rows).then(function(result){
-      if(result.error){
-        console.error("PUSH ERROR:",result.error.message||result.error);
-      }else{
-        console.log("✓ PUSH OK");
-      }
-    }).catch(function(err){
-      console.error("PUSH FAIL:",err.message||err);
-    });
+    supabase.from("tracker").upsert(rows).catch(function(err){});
   }
 
-  var lastPullLog=0;
   function pullFromSupabase(){
     supabase.from("tracker").select("*").then(function(result){
-      if(result.error){console.error("PULL ERROR:",result.error);return;}
+      if(result.error){return;}
       var data=result.data||[];
       var changed=false;
-      var changes=[];
       data.forEach(function(row){
         if(state[row.id]){
           if(state[row.id].status!==row.status){
-            changes.push(row.id+": status "+state[row.id].status+"→"+row.status);
             state[row.id].status=row.status;changed=true;
           }
           var remoteNotes=[];
@@ -312,22 +293,21 @@
           }catch(e){}
           var localNotes=JSON.stringify(state[row.id].notes||[]);
           var remoteNotesStr=JSON.stringify(remoteNotes);
-          if(localNotes!==remoteNotesStr){state[row.id].notes=remoteNotes;changed=true;}
-          if(row.tasks&&typeof row.tasks==="object"){
-            var localTasks=JSON.stringify(state[row.id].tasks||{});
-            var remoteTasks=JSON.stringify(row.tasks);
-            if(localTasks!==remoteTasks){
-              changes.push(row.id+": tasks "+localTasks+"→"+remoteTasks);
+          if(localNotes!==remoteNotesStr){
+            state[row.id].notes=remoteNotes;changed=true;
+          }
+          if(row.tasks){
+            var localTasksStr=JSON.stringify(state[row.id].tasks||{});
+            var remoteTasksStr=JSON.stringify(row.tasks);
+            if(localTasksStr!==remoteTasksStr){
               state[row.id].tasks=row.tasks;changed=true;
             }
           }
         }
       });
-      if(changes.length>0){
-        console.log("← PULL:",changes.join(" | "));
-        lastPullLog=Date.now();
+      if(changed){
+        render();recompute();
       }
-      if(changed){render();recompute();}
     });
   }
 
@@ -358,11 +338,9 @@
           b.addEventListener("click",function(e){
             e.preventDefault();
             e.stopPropagation();
-            console.log("STATUS CLICK:",m.id,"→",opt.s);
             soundClick();
             state[m.id].status=opt.s;
             if(opt.s==="complete")soundCheckmark();
-            console.log("STATE UPDATE:",m.id,state[m.id]);
             render();recompute();save(true);
           });
           seg.appendChild(b);
@@ -436,12 +414,12 @@
             var isChecked=state[m.id].tasks[idx]||false;
             var cb=document.createElement("input");cb.type="checkbox";cb.checked=isChecked;
             cb.addEventListener("change",function(){
-              console.log("TASK CHECK:",m.id,"task["+idx+"]:",isChecked,"→",cb.checked);
               soundClick();
               state[m.id].tasks[idx]=cb.checked;
               if(cb.checked)soundCheckmark();
-              console.log("TASK STATE SAVED:",m.id,"=",JSON.stringify(state[m.id].tasks));
-              render();recompute();save(true);
+              recompute();
+              save(true);
+              setTimeout(function(){render();},50);
             });
             var label=document.createElement("label");label.textContent=task;label.style.margin="0";
             li.appendChild(cb);li.appendChild(label);tasksList.appendChild(li);
@@ -496,7 +474,8 @@
   render();
   recompute();
   pushToSupabase();
-  setInterval(pullFromSupabase,500);
+  pullFromSupabase();
+  setInterval(pullFromSupabase,250);
 })();
   </script>
 </body>
