@@ -165,14 +165,10 @@
     <footer><b>Owners:</b> BlockVoices is the event; Outside The Wire Productions creates the products. Milestone dates are targets and may shift with deposit timing, speaker availability, and review turnaround. Recording must complete by June&nbsp;30; two revision rounds are included per video; final delivery lands at least two weeks before the August&nbsp;19–20 Summit. &nbsp;·&nbsp; Skylark B-roll &amp; backdrop items are provided, not billed; social promo flyers included at no extra cost.</footer>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   "use strict";
   var STORAGE_KEY="otw_blockvoices_tracker_v1";
-  var SURL="https://exjliabrkcjhwscyjgmu.supabase.co";
-  var SKEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4amxpYWJya2NqaHdzY3lqZ211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTAzOTEsImV4cCI6MjA5NzM4NjM5MX0.tt0vx8486B7Foktev4c9ndaVrAzF5510nrvw49VIMgg";
-  var sb=supabase.createClient(SURL,SKEY);
   var OWNERS={"Outside The Wire":"o-otw","Skylark":"o-skylark","BlockVoices":"o-bv","Joint":"o-joint"};
   var MILESTONES=[
     {id:"strategy",date:"Delivered",title:"Strategy & Creative Direction",owner:"Joint",desc:"Series framework + two production guides. Co-developed with Skylark.",def:"complete"},
@@ -199,7 +195,7 @@
     if(source){try{var o=JSON.parse(source);Object.keys(o).forEach(function(id){if(state[id]){if(o[id]&&typeof o[id].status==="string")state[id].status=o[id].status;if(o[id]&&typeof o[id].note==="string")state[id].note=o[id].note;}});}catch(e){}}
     if(hash)sLS(JSON.stringify(state));
   }
-  function save(flash){var ok=sLS(JSON.stringify(state));MILESTONES.forEach(function(m){sb.from("tracker").upsert({id:m.id,status:state[m.id].status,note:state[m.id].note,tasks:JSON.stringify(state[m.id].tasks),updated_at:new Date().toISOString()}).catch(function(){});});var n=document.getElementById("savedNote");if(flash){n.innerHTML=ok?"✓ <b>Saved</b>":"⚠ Save failed";clearTimeout(save._t);save._t=setTimeout(function(){n.textContent="";},2200);}}
+  function save(flash){var ok=sLS(JSON.stringify(state));var n=document.getElementById("savedNote");if(flash){n.innerHTML=ok?"✓ <b>Saved</b> in this browser":"⚠ Couldn't save (storage blocked) — use Export";clearTimeout(save._t);save._t=setTimeout(function(){n.textContent="";},2200);}}
   function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;}
   function render(){
     var tl=document.getElementById("timeline");tl.innerHTML="";
@@ -249,9 +245,7 @@
   function importProgress(){var inp=document.createElement("input");inp.type="file";inp.accept="application/json,.json";inp.addEventListener("change",function(){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);Object.keys(o).forEach(function(id){if(state[id]){if(typeof o[id].status==="string")state[id].status=o[id].status;if(typeof o[id].note==="string")state[id].note=o[id].note;}});render();recompute();save(true);}catch(e){alert("That file didn't look like a valid progress export.");}};r.readAsText(f);});inp.click();}
   function copyShareLink(){var url=location.origin+location.pathname+"#data="+encodeURIComponent(JSON.stringify(state));function done(ok){var n=document.getElementById("savedNote");n.innerHTML=ok?"✓ <b>Link copied</b> — paste to share current status":"Link is in the address bar";clearTimeout(copyShareLink._t);copyShareLink._t=setTimeout(function(){n.textContent="";},2600);}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){done(true);},function(){location.hash="data="+encodeURIComponent(JSON.stringify(state));done(false);});}else{location.hash="data="+encodeURIComponent(JSON.stringify(state));done(false);}}
   function resetAll(){if(!confirm("Reset every phase back to its starting status and clear all notes?"))return;state=defaults();render();recompute();save(true);if(location.hash)history.replaceState(null,"",location.pathname);}
-  function syncDB(){sb.from("tracker").select("*").then(function(r){if(r.data){r.data.forEach(function(row){if(state[row.id]){state[row.id].status=row.status||state[row.id].status;state[row.id].note=row.note||state[row.id].note;if(row.tasks){try{state[row.id].tasks=JSON.parse(row.tasks);}catch(e){}}}});render();recompute();}}).catch(function(){});}
   loadState();render();recompute();
-  setInterval(syncDB,1500);
   document.getElementById("btnExport").addEventListener("click",exportProgress);
   document.getElementById("btnImport").addEventListener("click",importProgress);
   document.getElementById("btnShare").addEventListener("click",copyShareLink);
