@@ -232,7 +232,7 @@
     }
   }
 
-  var lastLocalChange=0;
+  var lastLocalChange={};
   var currentUserName="";
 
   function initUserName(){
@@ -250,6 +250,9 @@
 
   function save(flash){
     var ok=sLS(JSON.stringify(state));
+    Object.keys(state).forEach(function(mid){
+      lastLocalChange[mid]=Date.now();
+    });
     if(flash){
       var n=document.getElementById("savedNote");
       n.innerHTML="✓ <b>Syncing…</b>";
@@ -279,7 +282,9 @@
       var data=result.data||[];
       var changed=false;
       data.forEach(function(row){
-        if(state[row.id]){
+        var timeSinceLocalUpdate=Date.now()-(lastLocalChange[row.id]||0);
+        var skipThisMilestone=timeSinceLocalUpdate<1200;
+        if(state[row.id]&&!skipThisMilestone){
           if(state[row.id].status!==row.status){
             state[row.id].status=row.status;changed=true;
           }
