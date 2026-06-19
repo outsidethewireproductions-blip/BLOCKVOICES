@@ -292,7 +292,8 @@
             state[row.id].notes=notes;changed=true;
           }
           var tasks=Array.isArray(row.tasks)?row.tasks:[];
-          if(age>5000&&JSON.stringify(state[row.id].tasks||[])!==JSON.stringify(tasks)){
+          var taskAge=lastChange[row.id]?Date.now()-lastChange[row.id]:999999;
+          if(taskAge>5000&&JSON.stringify(state[row.id].tasks||[])!==JSON.stringify(tasks)){
             state[row.id].tasks=tasks;changed=true;
           }
         }
@@ -409,6 +410,7 @@
             cb.addEventListener("change",function(){
               soundClick();
               state[m.id].tasks[idx]=cb.checked;
+              lastChange[m.id]=Date.now();
               if(cb.checked)soundCheckmark();
               recompute();
               save(true);
