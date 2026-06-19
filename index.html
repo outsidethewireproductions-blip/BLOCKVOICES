@@ -92,9 +92,10 @@
   .seg button{font-family:var(--mono);font-size:11.5px;font-weight:600;cursor:pointer;border:0;background:transparent;
     color:var(--muted);padding:7px 12px;border-right:1px solid var(--line);transition:.12s;white-space:nowrap}
   .seg button:last-child{border-right:0}
-  .seg button:hover{background:#fffdf3;color:var(--ink)}
-  .seg button[aria-pressed="true"]{background:var(--gold);color:#2a2305;font-weight:700}
-  .seg button[aria-pressed="true"].blocked{background:var(--block);color:#fff}
+  .seg button:hover{background:#fffdf3;color:var(--ink);z-index:10}
+  .seg button[aria-pressed="true"]{background:var(--gold);color:#2a2305;font-weight:700;z-index:10}
+  .seg button[aria-pressed="true"].blocked{background:var(--block);color:#fff;z-index:10}
+  .seg-btn{font-family:var(--mono);font-size:11.5px;font-weight:600;cursor:pointer;border:0;background:transparent;color:var(--muted);padding:7px 12px;border-right:1px solid var(--line);transition:.12s;white-space:nowrap;z-index:5}
   .notes{font-family:var(--mono);font-size:12px;flex:1;min-width:120px;border:1px solid var(--line);border-radius:6px;
     padding:7px 10px;background:#fff;color:var(--ink);outline:none}
   .notes::placeholder{color:var(--muted)}
@@ -281,10 +282,16 @@
         var controls=el("div","controls");
         var seg=el("div","seg");
         STATUSES.forEach(function(opt){
-          var b=el("button",opt.s,opt.label);
+          var b=document.createElement("button");
+          b.className="seg-btn "+opt.s;
           b.type="button";
+          b.textContent=opt.label;
           b.setAttribute("aria-pressed",String(st===opt.s));
-          b.addEventListener("click",function(){
+          b.style.cursor="pointer";
+          b.addEventListener("click",function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            console.log("STATUS CLICK:",opt.s);
             soundClick();
             state[m.id].status=opt.s;
             if(opt.s==="complete")soundCheckmark();
